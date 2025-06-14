@@ -32,7 +32,7 @@ class AuthService {
         };
 
         const token = jwt.sign(payload, JWT_SECRET, {
-            expiresIn: JWT_VALIDITY,
+            expiresIn: Number(JWT_VALIDITY),
         });
         this.logger.info("Login colpleted")
         return {
