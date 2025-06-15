@@ -16,7 +16,7 @@ import { Waitlist } from './waitlist.entity';
 import { Notification } from './notification.entity';
 import { Review } from './review.entity';
 import { AuditLog } from './auditlog.entity';
-import { EmployeeRole,EmployeeStatus } from '../types/enums';
+import { EmployeeRole,EmployeeStatus } from './enums';
 
 @Entity()
 class Employee extends AbstractEntity {
