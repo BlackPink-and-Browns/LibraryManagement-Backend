@@ -10,9 +10,6 @@ import Employee from "./employee.entity";
 
 @Entity()
 class Address extends AbstractEntity{
-    @PrimaryGeneratedColumn()
-    id: number;
-
     @Column()
     houseNo : string
 

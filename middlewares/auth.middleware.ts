@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import httpException from "../exceptions/http.exception";
 import { JWT_SECRET } from "../utils/constants";
 import  jwt  from "jsonwebtoken";
-import { EmployeeRole } from "../entities/employee.entity";
 
 
 const authMiddleware = (req:Request,res:Response,next:NextFunction) => {

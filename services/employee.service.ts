@@ -1,8 +1,9 @@
 import { InsertResult } from "typeorm";
-import Employee, {
+import  {
     EmployeeRole,
     EmployeeStatus,
-} from "../entities/employee.entity";
+} from "../types/enums";
+import Employee from "../entities/employee.entity";
 import EmployeeRepository from "../repositories/employee.repository";
 import Address from "../entities/address.entity";
 import { CreateAddressDto } from "../dto/create-address.dto";
