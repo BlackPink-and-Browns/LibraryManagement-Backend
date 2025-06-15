@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddApplicationTablesAndEnumTypes1750016969987 implements MigrationInterface {
-    name = 'AddApplicationTablesAndEnumTypes1750016969987'
+export class AddApplicationTablesAndEnumTypes1750024882837 implements MigrationInterface {
+    name = 'AddApplicationTablesAndEnumTypes1750024882837'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE "office" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "name" character varying NOT NULL, "address" text NOT NULL, CONSTRAINT "PK_200185316ba169fda17e3b6ba00" PRIMARY KEY ("id"))`);
@@ -14,6 +14,8 @@ export class AddApplicationTablesAndEnumTypes1750016969987 implements MigrationI
         await queryRunner.query(`CREATE TABLE "waitlist" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "status" "public"."waitlist_status_enum" NOT NULL DEFAULT 'REQUESTED', "book_id" integer, "employee_id" integer, CONSTRAINT "PK_973cfbedc6381485681d6a6916c" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "notification" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "message" text NOT NULL, "type" character varying NOT NULL, "read" boolean NOT NULL DEFAULT false, "employee_id" integer, CONSTRAINT "PK_705b6c7cdf9b2c2ff7ac7872cb7" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "audit_log" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "action" text NOT NULL, "entity_type" character varying NOT NULL, "entity_id" uuid, "employee_id" integer, CONSTRAINT "PK_07fefa57f7f5ab8fc3f52b3ed0b" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."employee_status_enum" AS ENUM('ACTIVE', 'INACTIVE', 'PROBATION')`);
+        await queryRunner.query(`CREATE TYPE "public"."employee_role_enum" AS ENUM('UI', 'UX', 'DEVELOPER', 'HR')`);
         await queryRunner.query(`CREATE TABLE "employee" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "employee_id" character varying NOT NULL, "email" character varying NOT NULL, "name" character varying NOT NULL, "age" integer NOT NULL, "experience" integer NOT NULL, "status" "public"."employee_status_enum" NOT NULL DEFAULT 'INACTIVE', "joining_date" date NOT NULL, "password" character varying NOT NULL, "role" "public"."employee_role_enum" NOT NULL DEFAULT 'DEVELOPER', "department_id" integer, CONSTRAINT "UQ_f9d306b968b54923539b3936b03" UNIQUE ("employee_id"), CONSTRAINT "UQ_817d1d427138772d47eca048855" UNIQUE ("email"), CONSTRAINT "PK_3c2bc72f03fd5abbbc5ac169498" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "review" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "content" text NOT NULL, "rating" integer NOT NULL, "book_id" integer, "employee_id" integer, CONSTRAINT "PK_2e4299a343a81574217255c00ca" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE "author" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "deleted_at" TIMESTAMP, "name" character varying NOT NULL, CONSTRAINT "PK_5a0e79799d372fe56f2f3fa6871" PRIMARY KEY ("id"))`);
@@ -77,6 +79,8 @@ export class AddApplicationTablesAndEnumTypes1750016969987 implements MigrationI
         await queryRunner.query(`DROP TABLE "author"`);
         await queryRunner.query(`DROP TABLE "review"`);
         await queryRunner.query(`DROP TABLE "employee"`);
+        await queryRunner.query(`DROP TYPE "public"."employee_role_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."employee_status_enum"`);
         await queryRunner.query(`DROP TABLE "audit_log"`);
         await queryRunner.query(`DROP TABLE "notification"`);
         await queryRunner.query(`DROP TABLE "waitlist"`);
