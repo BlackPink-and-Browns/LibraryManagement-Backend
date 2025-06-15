@@ -2,7 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import AbstractEntity from './abstract.entity';
 import { Book } from './book.entity';
 import  Employee  from './employee.entity';
-import { WaitlistStatus } from '../types/enums';
+import { WaitlistStatus } from './enums';
 
 @Entity()
 export class Waitlist extends AbstractEntity {

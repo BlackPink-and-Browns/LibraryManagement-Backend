@@ -1,4 +1,4 @@
-import { EmployeeRole } from "../types/enums";
+import { EmployeeRole } from "../entities/enums";
 import httpException from "../exceptions/http.exception";
 import { NextFunction, Request, Response } from "express";
 

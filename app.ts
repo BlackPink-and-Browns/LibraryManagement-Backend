@@ -10,6 +10,8 @@ import { LoggerService } from "./services/logger.service";
 import departmentRouter from "./routes/department.route";
 import cors from 'cors'
 
+const port = process.env.PORT || 3000;
+
 const server = express();
 const logger = LoggerService.getInstance("app()");
 
@@ -35,7 +37,7 @@ const init = async () => {
         await datasource.initialize();
         logger.info("connected to database training");
 
-        server.listen(3000, () => {
+        server.listen(port, () => {
             logger.info("server listening to 3000");
         });
     } catch {

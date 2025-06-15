@@ -1,5 +1,3 @@
-// enums.ts
-
 export enum EmployeeRole {
   UI = 'UI',
   UX = 'UX',

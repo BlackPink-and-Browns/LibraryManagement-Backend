@@ -1,5 +1,5 @@
 import { IsInt } from "class-validator";
-import { EmployeeRole } from "../types/enums";
+import { EmployeeRole } from "../entities/enums";
 
 export default class JWTPayLoad {
     @IsInt()

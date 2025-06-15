@@ -1,6 +1,6 @@
 import { Request, Response, Router, NextFunction } from "express";
 import Employee from "../entities/employee.entity";
-import { EmployeeRole } from "../types/enums";
+import { EmployeeRole } from "../entities/enums";
 import EmployeeService from "../services/employee.service";
 import httpException from "../exceptions/http.exception";
 import { isEmail } from "../validators/email.validator";

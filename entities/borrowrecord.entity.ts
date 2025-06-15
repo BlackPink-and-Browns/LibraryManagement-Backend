@@ -3,7 +3,7 @@ import AbstractEntity from './abstract.entity';
 import { BookCopy } from './bookcopy.entity';
 import  Employee  from './employee.entity';
 import { Shelf } from './shelf.entity';
-import { BorrowStatus } from '../types/enums';
+import { BorrowStatus } from './enums';
 
 @Entity()
 export class BorrowRecord extends AbstractEntity {
