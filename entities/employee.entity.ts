@@ -20,9 +20,6 @@ import { EmployeeRole,EmployeeStatus } from '../types/enums';
 
 @Entity()
 class Employee extends AbstractEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
   @Column({ unique: true })
   employeeID: string;
 

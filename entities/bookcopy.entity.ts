@@ -6,7 +6,7 @@ import { BorrowRecord } from './borrowrecord.entity';
 
 @Entity()
 export class BookCopy extends AbstractEntity {
-  @ManyToOne(() => Book, book => book.copies)
+  @ManyToOne(() => Book, book => book.copies,{onDelete:'CASCADE'})
   @JoinColumn({ name: 'book_id' })
   book: Book;
 

@@ -1,9 +1,15 @@
-import { Entity, Column, OneToMany } from "typeorm";
+import {
+  Entity,
+  Column,
+  OneToMany,
+  ManyToMany,
+  JoinTable
+} from "typeorm";
 import AbstractEntity from "./abstract.entity";
-import { BookAuthor } from "./bookauthor.entity";
-import { BookGenre } from "./bookgenre.entity";
+import { Genre } from "./genre.entity";
 import { BookCopy } from "./bookcopy.entity";
 import { Review } from "./review.entity";
+import { Author } from "./author.entity";
 
 @Entity()
 export class Book extends AbstractEntity {
@@ -19,11 +25,37 @@ export class Book extends AbstractEntity {
   @Column({ nullable: true })
   cover_image: string;
 
-  @OneToMany(() => BookAuthor, (ba) => ba.book)
-  bookAuthors: BookAuthor[];
+  @ManyToMany(() => Author, (author) => author.books, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: "book_authors", //  custom junction table name
+    joinColumn: {
+      name: "book_id",
+      referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+      name: "author_id",
+      referencedColumnName: "id"
+    }
+  })
+  authors: Author[];
 
-  @OneToMany(() => BookGenre, (bg) => bg.book)
-  bookGenres: BookGenre[];
+  @ManyToMany(() => Genre, (genre) => genre.books, {
+    cascade: true,
+  })
+  @JoinTable({
+    name: "book_genres", //  custom junction table name
+    joinColumn: {
+      name: "book_id",
+      referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+      name: "genre_id",
+      referencedColumnName: "id"
+    }
+  })
+  genres: Genre[];
 
   @OneToMany(() => BookCopy, (copy) => copy.book)
   copies: BookCopy[];
