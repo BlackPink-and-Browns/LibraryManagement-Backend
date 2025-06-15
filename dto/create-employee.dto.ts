@@ -1,7 +1,7 @@
 import { IsDate, IsEmail, IsEnum, IsInt, isNotEmpty, IsNotEmpty, IsNumber, IsString, MinLength, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { CreateAddressDto } from "./create-address.dto";
-import { EmployeeRole, EmployeeStatus } from "../entities/employee.entity";
+import { EmployeeRole, EmployeeStatus } from "../types/enums";
 import Department from "../entities/department.entity";
 
 export class CreateEmployeeDto {
