@@ -53,14 +53,12 @@ class ShelfService {
 
     const createdShelf = await this.shelfRepository.create(shelf);
 
-    if (userId) {
-      auditLogService.createAuditLog(
-        "CREATE",
-        userId,
-        createdShelf.id.toString(),
-        "SHELF"
-      );
-    }
+    auditLogService.createAuditLog(
+      "CREATE",
+      userId,
+      createdShelf.id.toString(),
+      "SHELF"
+    );
 
     this.logger.info(`Shelf created with label ${label}`);
     return createdShelf;
@@ -78,19 +76,19 @@ class ShelfService {
     }
 
     // If only label_id is updated but office remains the same
-     if (updateDto.label_id !== undefined && shelf.office) {
+    if (updateDto.label_id !== undefined && shelf.office) {
       const formattedLabelNo = updateDto.label_id.toString().padStart(3, "0");
       shelf.label = `${shelf.office.name}-${formattedLabelNo}`;
-    }else{
-        this.logger.error(`label id is not provided`);
+    } else {
+      this.logger.error(`label id is not provided`);
       throw new httpException(400, "label id is not provided");
     }
 
     const updatedShelf = await this.shelfRepository.update(id, shelf);
 
-    if (userId) {
-      auditLogService.createAuditLog("UPDATE", userId, id.toString(), "SHELF");
-    }
+  
+    auditLogService.createAuditLog("UPDATE", userId, shelf.id.toString(), "SHELF");
+    
 
     this.logger.info(`Shelf updated with id ${id}`);
     return updatedShelf;
@@ -103,11 +101,11 @@ class ShelfService {
       throw new httpException(404, "Shelf not found");
     }
 
+    const shelf_id=shelf.id.toString();
     await this.shelfRepository.remove(shelf);
 
-    if (userId) {
-      auditLogService.createAuditLog("DELETE", userId, id.toString(), "SHELF");
-    }
+      
+    auditLogService.createAuditLog("DELETE", userId, shelf_id, "SHELF");
 
     this.logger.info(`Shelf deleted with id ${id}`);
   }

@@ -69,7 +69,7 @@ class ReviewController {
       }
       const review_id=Number(req.params.id);
       console.log(review_id)
-      const updated = await this.reviewService.updateReview(review_id, updateDto);
+      const updated = await this.reviewService.updateReview(review_id, updateDto,req.user?.id);
       const response = plainToInstance(ReviewResponseDto, updated, {
         excludeExtraneousValues: true,
       });
@@ -81,7 +81,7 @@ class ReviewController {
 
   async deleteReview(req: Request, res: Response, next: NextFunction) {
     try {
-      await this.reviewService.deleteReview(req.params.id);
+      await this.reviewService.deleteReview(req.params.id,req.user?.id);
       res.status(204).send();
     } catch (err) {
       next(err);
