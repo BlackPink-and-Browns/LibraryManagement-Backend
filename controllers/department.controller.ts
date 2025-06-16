@@ -1,5 +1,5 @@
 import { plainToInstance } from "class-transformer";
-import { CreateDepartmentDto } from "../dto/create-department.dto";
+import { CreateDepartmentDto } from "../dto/employee/create-department.dto";
 import Department from "../entities/department.entity";
 import Employee from "../entities/employee.entity";
 import { EmployeeRole } from "../entities/enums";

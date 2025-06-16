@@ -18,6 +18,31 @@ class ReviewRepository {
     });
   }
 
+  async findMany(): Promise<Review[]> {
+    return this.repository.find({
+      select: {
+        id: true,
+        rating: true,
+        content: true,
+        createdAt: false,
+        book: {
+          id: true,
+          title: true,
+          isbn: false,
+        },
+        employee: {
+          id: true,
+          name: true,
+          email: false,
+        },
+      },
+      relations: {
+        book: true,
+        employee: true,
+      },
+    });
+  }
+
   async findByBookId(bookId: number): Promise<Review[]> {
     return this.repository.find({
       where: {
@@ -25,8 +50,17 @@ class ReviewRepository {
           id: bookId,
         },
       },
+      select: {
+        id: true,
+        rating: true,
+        content: true,
+        createdAt: false,
+        employee: {
+          id: true,
+          name: true,
+        },
+      },
       relations: {
-        book: true,
         employee: true,
       },
     });
@@ -39,9 +73,18 @@ class ReviewRepository {
           id: userId,
         },
       },
+      select: {
+        id: true,
+        rating: true,
+        content: true,
+        createdAt: false,
+        book: {
+          id: true,
+          title: true,
+        },
+      },
       relations: {
         book: true,
-        employee: true,
       },
     });
   }
