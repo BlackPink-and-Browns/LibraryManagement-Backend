@@ -1,8 +1,8 @@
 import { Expose } from "class-transformer";
 
-export class BookPreviewResponseDto {
+export class EmployeePreviewResponseDto {
   @Expose()
   id: number;
   @Expose()
-  title: string;
+  name: string;
 }

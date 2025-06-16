@@ -4,12 +4,14 @@ import { EmployeeRole } from "../entities/enums";
 import EmployeeService from "../services/employee.service";
 import httpException from "../exceptions/http.exception";
 import { isEmail } from "../validators/email.validator";
-import { CreateEmployeeDto } from "../dto/create-employee.dto";
+import { CreateEmployeeDto } from "../dto/employee/create-employee.dto";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import {checkRole } from "../middlewares/authorization.middleware";
+import { auditLogService } from "../routes/audit.route";
 
 class EmployeeController {
+
     constructor(private employeeService: EmployeeService, router: Router) {
         router.post("/",checkRole([EmployeeRole.HR,EmployeeRole.UI]), this.createEmployee.bind(this));
         router.get("/", this.getAllEmployees.bind(this));
@@ -61,9 +63,9 @@ class EmployeeController {
                 createEmployeeDto.experience,
                 createEmployeeDto.joiningDate,
                 createEmployeeDto.status,
-                createEmployeeDto.department_id
+                createEmployeeDto.department_id,
+                req.user?.id
             );
-
             res.status(201).send(e);
         } catch (err) {
             console.log(err);
@@ -72,7 +74,7 @@ class EmployeeController {
     }
 
     deleteEmployee = async (req: Request, res: Response) => {
-        await this.employeeService.deleteEmployeeByID(Number(req.params.id));
+        await this.employeeService.deleteEmployeeByID(Number(req.params.id),req.user?.id);
 
         res.status(204).send();
     };
@@ -101,7 +103,8 @@ class EmployeeController {
                 updateEmployeeDto.experience,
                 updateEmployeeDto.joiningDate,
                 updateEmployeeDto.status,
-                updateEmployeeDto.department_id
+                updateEmployeeDto.department_id,
+                req.user?.id
             );
 
             res.status(200).send();

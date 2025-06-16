@@ -1,17 +1,15 @@
 import { InsertResult } from "typeorm";
-import  {
-    EmployeeRole,
-    EmployeeStatus,
-} from "../entities/enums";
+import { EmployeeRole, EmployeeStatus } from "../entities/enums";
 import Employee from "../entities/employee.entity";
 import EmployeeRepository from "../repositories/employee.repository";
 import Address from "../entities/address.entity";
-import { CreateAddressDto } from "../dto/create-address.dto";
+import { CreateAddressDto } from "../dto/employee/create-address.dto";
 import bcrypt from "bcrypt";
 import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import Department from "../entities/department.entity";
 import { departmentRepository } from "../routes/department.route";
+import { auditLogService } from "../routes/audit.route";
 
 class EmployeeService {
     private logger = LoggerService.getInstance(EmployeeService.name);
@@ -54,7 +52,8 @@ class EmployeeService {
         experience: number,
         joiningDate: Date,
         status: EmployeeStatus,
-        department_id: number
+        department_id: number,
+        user_id: number
     ): Promise<Employee> {
         const newAddress = new Address();
         newAddress.houseNo = address.houseNo;
@@ -79,17 +78,37 @@ class EmployeeService {
             throw new httpException(400, "Department not found");
         }
         e.department = dep;
+
+        const createdEmplooyee = await this.employeeRepository.create(e);
+        auditLogService.createAuditLog(
+            "CREATE",
+            user_id,
+            createdEmplooyee.id.toString(),
+            "EMPLOYEE"
+        );
+        auditLogService.createAuditLog(
+            "CREATE",
+            user_id,
+            createdEmplooyee.address.id.toString(),
+            "ADDRESS"
+        );
         this.logger.info("employee created");
-        return this.employeeRepository.create(e);
+        return createdEmplooyee;
     }
 
-    async deleteEmployeeByID(id: number): Promise<void> {
+    async deleteEmployeeByID(id: number, user_id: number): Promise<void> {
         //await this.employeeRepository.delete(id)
         const e = await this.employeeRepository.findOneByID(id);
         if (!e) {
             this.logger.error("employee not found");
             throw new httpException(400, "Employee not found");
         }
+        auditLogService.createAuditLog(
+            "DELETE",
+            user_id,
+            id.toString(),
+            "EMPLOYEE"
+        );
         await this.employeeRepository.remove(e);
     }
 
@@ -98,14 +117,15 @@ class EmployeeService {
         name: string,
         email: string,
         age: number,
-        address : CreateAddressDto,
+        address: CreateAddressDto,
         password: string,
         role: EmployeeRole,
         employeeID: string,
         experience: number,
         joiningDate: Date,
         status: EmployeeStatus,
-        department_id: number
+        department_id: number,
+        user_id:number
     ): Promise<void> {
         const existingEmployee = await this.employeeRepository.findOneByID(id);
         if (!existingEmployee) {
@@ -117,9 +137,9 @@ class EmployeeService {
         existingEmployee.email = email;
         existingEmployee.age = age;
         existingEmployee.address.houseNo = address.houseNo;
-        existingEmployee.address.line1 = address.line1
-        existingEmployee.address.line2 = address.line2
-        existingEmployee.address.pincode = address.pincode
+        existingEmployee.address.line1 = address.line1;
+        existingEmployee.address.line2 = address.line2;
+        existingEmployee.address.pincode = address.pincode;
         existingEmployee.password = await bcrypt.hash(password, 10);
         existingEmployee.role = role;
         existingEmployee.employeeID = employeeID;
@@ -133,7 +153,13 @@ class EmployeeService {
         }
         existingEmployee.department = dep;
         await this.employeeRepository.update(id, existingEmployee);
-        this.logger.info("employee updated")
+        auditLogService.createAuditLog(
+            "UPDATE",
+            user_id,
+            id.toString(),
+            "EMPLOYEE"
+        );
+        this.logger.info("employee updated");
     }
 
     async updateEmployeeDepartment(id: number, department: Department) {
@@ -144,6 +170,7 @@ class EmployeeService {
         }
         existingEmployee.department = department;
         await this.employeeRepository.update(id, existingEmployee);
+        
     }
 }
 
