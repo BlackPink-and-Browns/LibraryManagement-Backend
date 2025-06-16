@@ -103,7 +103,8 @@ class EmployeeController {
                 updateEmployeeDto.experience,
                 updateEmployeeDto.joiningDate,
                 updateEmployeeDto.status,
-                updateEmployeeDto.department_id
+                updateEmployeeDto.department_id,
+                req.user?.id
             );
 
             res.status(200).send();

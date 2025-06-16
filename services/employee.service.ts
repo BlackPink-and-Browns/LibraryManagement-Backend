@@ -124,7 +124,8 @@ class EmployeeService {
         experience: number,
         joiningDate: Date,
         status: EmployeeStatus,
-        department_id: number
+        department_id: number,
+        user_id:number
     ): Promise<void> {
         const existingEmployee = await this.employeeRepository.findOneByID(id);
         if (!existingEmployee) {
@@ -152,6 +153,12 @@ class EmployeeService {
         }
         existingEmployee.department = dep;
         await this.employeeRepository.update(id, existingEmployee);
+        auditLogService.createAuditLog(
+            "UPDATE",
+            user_id,
+            id.toString(),
+            "EMPLOYEE"
+        );
         this.logger.info("employee updated");
     }
 
@@ -163,6 +170,7 @@ class EmployeeService {
         }
         existingEmployee.department = department;
         await this.employeeRepository.update(id, existingEmployee);
+        
     }
 }
 
