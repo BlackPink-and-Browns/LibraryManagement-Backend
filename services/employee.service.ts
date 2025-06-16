@@ -2,7 +2,7 @@ import { InsertResult } from "typeorm";
 import  {
     EmployeeRole,
     EmployeeStatus,
-} from "../types/enums";
+} from "../entities/enums";
 import Employee from "../entities/employee.entity";
 import EmployeeRepository from "../repositories/employee.repository";
 import Address from "../entities/address.entity";
