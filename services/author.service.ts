@@ -3,18 +3,27 @@ import { Author } from "../entities/author.entity";
 import { UpdateAuthorDTO } from "../dto/authors/update-author.dto";
 import AuthorRepository from "../repositories/author.repository";
 import httpException from "../exceptions/http.exception";
+import { auditLogService } from "../routes/audit.route";
 
 class AuthorService {
   private logger = LoggerService.getInstance(AuthorService.name);
 
   constructor(private authorRepository: AuthorRepository) {}
 
-  async createAuthor(CreateAuthorDTO): Promise<Author> {
+  async createAuthor(CreateAuthorDTO, user_id: number): Promise<Author> {
     const newAuthor = new Author();
     newAuthor.name = CreateAuthorDTO.name;
+    const createdAuthor = this.authorRepository.create(newAuthor);
+
+    auditLogService.createAuditLog(
+        "CREATE",
+        user_id,
+        (await createdAuthor).id.toString(),
+        "AUTHOR"
+    );
+
     this.logger.info("author created");
-    console.log(newAuthor);
-    return this.authorRepository.create(newAuthor);
+    return createdAuthor
   }
 
   async getAllAuthors(): Promise<Author[]> {
@@ -35,7 +44,8 @@ class AuthorService {
 
     async updateAuthor(
         id: number,
-        UpdateAuthorDTO
+        UpdateAuthorDTO,
+        user_id: number,
     ): Promise<void> {
         const existingAuthor = await this.authorRepository.findOneByID(id);
         if (!existingAuthor) {
@@ -45,6 +55,14 @@ class AuthorService {
 
         existingAuthor.name = UpdateAuthorDTO.name;
         await this.authorRepository.update(id, existingAuthor);
+
+        auditLogService.createAuditLog(
+            "UPDATE",
+            user_id,
+            (await existingAuthor).id.toString(),
+            "AUTHOR"
+        );
+
         this.logger.info("author updated")
     }
 

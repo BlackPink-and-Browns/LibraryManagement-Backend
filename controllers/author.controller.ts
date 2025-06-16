@@ -31,6 +31,7 @@ class AuthorController {
 
             const author = await this.authorService.createAuthor(
                 createAuthorDTO,
+                req.user?.id
             );
 
             res.status(201).send();
@@ -74,7 +75,8 @@ class AuthorController {
             const id = Number(req.params.id);
             await this.authorService.updateAuthor(
                 id,
-                updateAuthorDTO
+                updateAuthorDTO,
+                req.user?.id
             );
 
             res.status(200).send();
