@@ -63,9 +63,9 @@ class EmployeeController {
                 createEmployeeDto.experience,
                 createEmployeeDto.joiningDate,
                 createEmployeeDto.status,
-                createEmployeeDto.department_id
+                createEmployeeDto.department_id,
+                req.user?.id
             );
-            auditLogService.createAuditLog("CREATE",req.user?.id,e.id.toString(),"EMPLOYEE")
             res.status(201).send(e);
         } catch (err) {
             console.log(err);
@@ -74,7 +74,7 @@ class EmployeeController {
     }
 
     deleteEmployee = async (req: Request, res: Response) => {
-        await this.employeeService.deleteEmployeeByID(Number(req.params.id));
+        await this.employeeService.deleteEmployeeByID(Number(req.params.id),req.user?.id);
 
         res.status(204).send();
     };
