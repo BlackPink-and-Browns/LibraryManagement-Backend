@@ -12,6 +12,7 @@ import cors from 'cors'
 import authorRouter from "./routes/author.route";
 import reviewRouter from "./routes/review.route";
 import auditLogRouter from "./routes/audit.route";
+import waitlistRouter from "./routes/waitlist.route";
 
 const port = process.env.PORT || 3000;
 
@@ -29,6 +30,7 @@ server.use("/reviews",authMiddleware,reviewRouter);
 server.use("/audits",auditLogRouter)
 server.use("/auth", authRouter);
 server.use("/author", authMiddleware, authorRouter);
+server.use("/requests/books", authMiddleware, waitlistRouter);
 server.use(errorMiddleware);
 
 
