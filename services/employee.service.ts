@@ -6,7 +6,7 @@ import  {
 import Employee from "../entities/employee.entity";
 import EmployeeRepository from "../repositories/employee.repository";
 import Address from "../entities/address.entity";
-import { CreateAddressDto } from "../dto/create-address.dto";
+import { CreateAddressDto } from "../dto/employee/create-address.dto";
 import bcrypt from "bcrypt";
 import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";

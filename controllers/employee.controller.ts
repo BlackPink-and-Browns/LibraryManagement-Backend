@@ -4,7 +4,7 @@ import { EmployeeRole } from "../entities/enums";
 import EmployeeService from "../services/employee.service";
 import httpException from "../exceptions/http.exception";
 import { isEmail } from "../validators/email.validator";
-import { CreateEmployeeDto } from "../dto/create-employee.dto";
+import { CreateEmployeeDto } from "../dto/employee/create-employee.dto";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import {checkRole } from "../middlewares/authorization.middleware";
