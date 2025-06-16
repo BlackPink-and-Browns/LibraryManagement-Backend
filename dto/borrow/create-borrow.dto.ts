@@ -5,7 +5,6 @@ export class CreateBorrowDto {
   @IsNotEmpty()
   bookCopyId: string;
 
-  @IsUUID()
   @IsNotEmpty()
   employeeId: string;
 }

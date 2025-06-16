@@ -3,7 +3,7 @@ import { BorrowStatus } from '../../entities/enums';
 
 export class OverdueAlertDto {
   @Expose()
-  id: string;
+  id: number;
 
   @Expose()
   borrowed_at: Date;
