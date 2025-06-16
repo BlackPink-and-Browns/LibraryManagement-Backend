@@ -9,9 +9,6 @@ import Employee from "./employee.entity";
 
 @Entity()
 class Department extends AbstractEntity {
-    @PrimaryGeneratedColumn()
-    id: number;
-
     @Column({unique:true})
     name: string;
 
