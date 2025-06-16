@@ -12,7 +12,7 @@ class ReviewController {
     router.get('/books/:book_id', this.getReviewsByBookId.bind(this));
     router.get('/users/:user_id', this.getReviewsByUserId.bind(this));
     router.post('/', this.createReview.bind(this));
-    router.put('/:id', this.updateReview.bind(this));
+    router.patch('/:id', this.updateReview.bind(this));
     router.delete('/:id', this.deleteReview.bind(this));
   }
 

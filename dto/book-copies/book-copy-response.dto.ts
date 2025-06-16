@@ -1,28 +1,25 @@
 import {
-    IsEmail,
-    IsInt,
-    IsNumber,
-    IsString,
-    ValidateNested,
+  IsEmail,
+  IsInt,
+  IsNumber,
+  IsString,
+  ValidateNested,
 } from "class-validator";
 import { Expose, Type } from "class-transformer";
 import { BookPreviewResponseDto } from "../books/book-preview-response.dto";
 
 export class BookCopyResponseDTO {
-    @Expose()
-    copy_id: number;
+  @Expose()
+  copy_id: number;
 
-    @Expose()
-    @ValidateNested()
-      @Type(() => BookPreviewResponseDto)
-      book: BookPreviewResponseDto;
+  @Expose()
+  @ValidateNested()
+  @Type(() => BookPreviewResponseDto)
+  book: BookPreviewResponseDto;
 
-    @Expose()
-    shelf_id: string;
+  @Expose()
+  shelf_id: string;
 
-    @Expose()
-    is_available: boolean;
-
-    @Expose()
-    created_by: string;
+  @Expose()
+  is_available: boolean;
 }
