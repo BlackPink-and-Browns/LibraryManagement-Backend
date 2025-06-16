@@ -8,18 +8,21 @@ class AuditLogRepository {
         return this.repository.save(auditlog);
     }
 
-    async findAll(): Promise<AuditLog[]> {
+    async findAll(user_id?: number, entity_id?: string): Promise<AuditLog[]> {
         return this.repository.find({
+            where: {
+                ...(user_id && { employee: { id: Number(user_id) } }),
+                ...(entity_id && { entityId: entity_id.toString() }),
+            },
             select: {
-                id: true,
                 action: true,
                 entityType: true,
                 entityId: true,
                 employee: {
-                    id: true,
-                    name: true,
-                    email: true,
+                    id:true,
+                    employeeID: true,
                 },
+                createdAt: true,
             },
             relations: {
                 employee: true,
@@ -27,3 +30,5 @@ class AuditLogRepository {
         });
     }
 }
+
+export default AuditLogRepository;

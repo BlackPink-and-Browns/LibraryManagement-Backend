@@ -8,8 +8,10 @@ import { CreateEmployeeDto } from "../dto/create-employee.dto";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import {checkRole } from "../middlewares/authorization.middleware";
+import { auditLogService } from "../routes/audit.route";
 
 class EmployeeController {
+
     constructor(private employeeService: EmployeeService, router: Router) {
         router.post("/",checkRole([EmployeeRole.HR,EmployeeRole.UI]), this.createEmployee.bind(this));
         router.get("/", this.getAllEmployees.bind(this));
@@ -63,7 +65,7 @@ class EmployeeController {
                 createEmployeeDto.status,
                 createEmployeeDto.department_id
             );
-
+            auditLogService.createAuditLog("CREATE",req.user?.id,e.id.toString(),"EMPLOYEE")
             res.status(201).send(e);
         } catch (err) {
             console.log(err);

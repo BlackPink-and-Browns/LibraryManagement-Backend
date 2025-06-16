@@ -9,6 +9,7 @@ import authMiddleware from "./middlewares/auth.middleware";
 import { LoggerService } from "./services/logger.service";
 import departmentRouter from "./routes/department.route";
 import cors from 'cors'
+import auditLogRouter from "./routes/audit.route";
 
 const port = process.env.PORT || 3000;
 
@@ -22,6 +23,7 @@ server.use(processTimeMiddleware);
 server.use(cors())
 server.use("/employees",authMiddleware, employeeRouter);
 server.use("/department",authMiddleware,departmentRouter)
+server.use("/audits",auditLogRouter)
 server.use("/auth", authRouter);
 server.use(errorMiddleware);
 

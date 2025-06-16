@@ -6,8 +6,10 @@ import Employee from './employee.entity'; // assuming User.ts is actually Employ
 @Entity()
 export class AuditLog extends AbstractEntity {
   @ManyToOne(() => Employee, employee => employee.auditLogs, { nullable: true })
-  @JoinColumn({ name: 'employee_id' })
   employee: Employee;
+
+  @Column()
+  employeeId: number
 
   @Column('text')
   action: string;
@@ -15,6 +17,6 @@ export class AuditLog extends AbstractEntity {
   @Column()
   entityType: string;
 
-  @Column('uuid', { nullable: true })
+  @Column()
   entityId: string;
 }
