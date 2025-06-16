@@ -13,6 +13,7 @@ import authorRouter from "./routes/author.route";
 import reviewRouter from "./routes/review.route";
 import auditLogRouter from "./routes/audit.route";
 import shelfRouter from "./routes/shelf.route";
+import bookRouter from "./routes/book.route";
 
 const port = process.env.PORT || 3000;
 
@@ -26,9 +27,10 @@ server.use(processTimeMiddleware);
 server.use(cors())
 server.use("/employees",authMiddleware, employeeRouter);
 server.use("/department",authMiddleware,departmentRouter);
+server.use("/books",authMiddleware,bookRouter)
 server.use("/reviews",authMiddleware,reviewRouter);
 server.use("/shelves",authMiddleware,shelfRouter)
-server.use("/audits",auditLogRouter)
+server.use("/audits",authMiddleware,auditLogRouter)
 server.use("/auth", authRouter);
 server.use("/author", authMiddleware, authorRouter);
 server.use(errorMiddleware);

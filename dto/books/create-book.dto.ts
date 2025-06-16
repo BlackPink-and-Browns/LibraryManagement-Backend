@@ -17,10 +17,13 @@ export class CreateBookDTO {
     title: string;
 
     @IsNotEmpty()
-    author: string
+    cover_image: string;
 
     @IsNotEmpty()
-    genres:string
+    authors: number[]
+
+    @IsNotEmpty()
+    genres:number[]
 
     @IsNotEmpty()
     description: string;
