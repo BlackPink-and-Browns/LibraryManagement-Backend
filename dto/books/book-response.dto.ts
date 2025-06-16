@@ -6,27 +6,33 @@ import {
     IsString,
     ValidateNested,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Expose, Type } from "class-transformer";
+import { GenrePreviewResponseDto } from "../genres/genre-preview-response.dto";
+import { AuthorPreviewResponseDto } from "../authors/author-preview-response.dto";
 
 export class BookResponseDTO {
-    @IsNotEmpty()
+    @Expose()
     book_id: number;
 
-    @IsNotEmpty()
+    @Expose()
     isbn: string;
 
-    @IsNotEmpty()
+    @Expose()
     title: string;
 
-    @IsNotEmpty()
-    author: string;
+    @Expose()
+    @ValidateNested()
+    @Type(() => AuthorPreviewResponseDto)
+    author: AuthorPreviewResponseDto;
 
-    @IsNotEmpty()
-    genres: string;
+    @Expose()
+    @ValidateNested()
+    @Type(() => GenrePreviewResponseDto)
+    genres: GenrePreviewResponseDto[];
 
-    @IsNotEmpty()
+    @Expose()
     description: string;
 
-    @IsNotEmpty()
+    @Expose()
     created_by: string;
 }

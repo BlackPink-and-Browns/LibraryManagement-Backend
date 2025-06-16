@@ -6,9 +6,12 @@ import {
     IsString,
     ValidateNested,
 } from "class-validator";
-import { Type } from "class-transformer";
+import { Expose, Type } from "class-transformer";
+import { BookPreviewResponseDto } from "../books/book-preview-response.dto";
 
 export class GenreBooksResponseDTO {
-    @IsNotEmpty()
-    books_id: number[];
+    @Expose()
+    @ValidateNested()
+    @Type(()=> BookPreviewResponseDto)
+    books: BookPreviewResponseDto[]
 }
