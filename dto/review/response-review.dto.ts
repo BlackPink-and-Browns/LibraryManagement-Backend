@@ -6,7 +6,7 @@ export class ReviewResponseDto {
   rating: number;
 
   @Expose()
-  comment: string;
+  content: string;
 
   @Expose()
   bookId: string;
