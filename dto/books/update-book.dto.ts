@@ -24,7 +24,4 @@ export class BookResponseDTO {
 
     @IsNotEmpty()
     description: string;
-
-    @IsNotEmpty()
-    updated_by: string
 }

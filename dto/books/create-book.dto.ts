@@ -24,7 +24,4 @@ export class CreateBookDTO {
 
     @IsNotEmpty()
     description: string;
-
-    @IsNotEmpty()
-    created_by: string;
 }
