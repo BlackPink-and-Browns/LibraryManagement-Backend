@@ -23,3 +23,9 @@ export enum WaitlistStatus {
   NOTIFIED = 'NOTIFIED',
   REMOVED = 'REMOVED',
 }
+
+export enum NotificationType {
+  BOOK_REQUEST = 'BOOK_REQUEST',
+  BOOK_AVAILABLE = 'BOOK_AVAILABLE',
+  BOOK_OVERDUE = 'BOOK_OVERDUE',
+}

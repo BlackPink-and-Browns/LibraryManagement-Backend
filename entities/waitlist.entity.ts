@@ -14,6 +14,9 @@ export class Waitlist extends AbstractEntity {
   @JoinColumn({ name: 'employee_id' })
   employee: Employee;
 
+  @Column()
+  employeeId: number;
+
   @Column({
     type: 'enum',
     enum: WaitlistStatus,
