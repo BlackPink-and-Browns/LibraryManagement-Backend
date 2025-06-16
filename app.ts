@@ -38,7 +38,7 @@ const init = async () => {
         logger.info("connected to database training");
 
         server.listen(port, () => {
-            logger.info("server listening to 3000");
+            logger.info("server listening to " + port);
         });
     } catch {
         logger.error("Failed to connect");

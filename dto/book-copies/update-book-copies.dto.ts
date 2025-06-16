@@ -14,7 +14,4 @@ export class updateBookCopyDTO {
 
     @IsNotEmpty()
     shelf_id: string;
-
-    @IsNotEmpty()
-    updated_by: string;
 }
