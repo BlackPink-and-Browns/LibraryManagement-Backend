@@ -85,6 +85,16 @@ class BookRepository {
             },
         });
     }
+
+    async findPreviewByID(id:number): Promise<Book> {
+        return this.repository.findOne({
+            where: {id},
+            select: {
+                id: true,
+                title: true,
+            }
+        })
+    }
 }
 
 export default BookRepository;
