@@ -14,8 +14,11 @@ import reviewRouter from "./routes/review.route";
 import auditLogRouter from "./routes/audit.route";
 import waitlistRouter from "./routes/waitlist.route";
 import shelfRouter from "./routes/shelf.route";
+import bookRouter from "./routes/book.route";
+import bookCopyRouter from "./routes/book-copy.route";
 import borrowRouter from "./routes/borrow.route";
 import notificationRouter from "./routes/notification.route";
+import genreRouter from "./routes/genre.route";
 
 const port = process.env.PORT || 3000;
 
@@ -29,14 +32,16 @@ server.use(processTimeMiddleware);
 server.use(cors())
 server.use("/employees",authMiddleware, employeeRouter);
 server.use("/department",authMiddleware,departmentRouter);
+server.use("/books",authMiddleware,bookRouter,bookCopyRouter)
 server.use("/reviews",authMiddleware,reviewRouter);
 server.use("/shelves",authMiddleware,shelfRouter)
-server.use("/audits",auditLogRouter)
+server.use("/audits",authMiddleware,auditLogRouter)
 server.use("/auth", authRouter);
 server.use("/author", authMiddleware, authorRouter);
 server.use("/requests/books", authMiddleware, waitlistRouter);
 server.use("/borrows",authMiddleware,borrowRouter);
 server.use("/notifications", authMiddleware, notificationRouter);
+server.use("/genres",authMiddleware,genreRouter);
 server.use(errorMiddleware);
 
 

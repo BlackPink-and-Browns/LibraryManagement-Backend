@@ -8,20 +8,15 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 
-export class BookResponseDTO {
+export class UpdateBookDTO {
 
-    @IsNotEmpty()
     isbn: string;
 
-    @IsNotEmpty()
     title: string;
 
-    @IsNotEmpty()
     author: string
 
-    @IsNotEmpty()
     genres:string
 
-    @IsNotEmpty()
     description: string;
 }
