@@ -98,31 +98,73 @@ class BorrowRecordRepository {
     });
   }
 
- async findBorrowedBooksByEmployee(employeeId: number): Promise<BorrowRecord[]> {
-  return this.repository.find({
-    where: {
-      borrowedBy: { id: employeeId },
-      status: BorrowStatus.BORROWED,
-    },
-    relations: {
-      bookCopy: {
-        book: true,
+  async findBorrowedBooksByEmployee(
+    employeeId: number
+  ): Promise<BorrowRecord[]> {
+    return this.repository.find({
+      where: {
+        borrowedBy: { id: employeeId },
+        status: BorrowStatus.BORROWED,
       },
-    },
-    select: {
-      id: true,
-      borrowed_at: true,
-      status: true,
-      bookCopy: {
-        id: true,
-        book: {
-          title: true,
+      relations: {
+        bookCopy: {
+          book: true,
         },
       },
-    },
-  });
-}
+      select: {
+        id: true,
+        borrowed_at: true,
+        status: true,
+        bookCopy: {
+          id: true,
+          book: {
+            title: true,
+          },
+        },
+      },
+    });
+  }
 
+  async findByStatusAndUser(
+    userId: number,
+    status: BorrowStatus
+  ): Promise<BorrowRecord[]> {
+    return this.repository.find({
+      where: {
+        borrowedBy: { id: userId },
+        status,
+      },
+      select: {
+        id: true,
+        borrowed_at: true,
+        returned_at: true,
+        status: true,
+        bookCopy: {
+          id: true,
+          is_available: true,
+          book: {
+            id: true,
+            title: true,
+            cover_image: true,
+          },
+        },
+        borrowedBy: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      relations: {
+        bookCopy: {
+          book: true,
+        },
+        borrowedBy: true,
+      },
+      order: {
+        borrowed_at: "DESC",
+      },
+    });
+  }
 }
 
 export default BorrowRecordRepository;

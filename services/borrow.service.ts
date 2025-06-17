@@ -77,6 +77,10 @@ class BorrowService {
     return savedBorrow;
   }
 
+
+
+
+
   async returnBook(
     id: number,
     returnShelfId?: number,
@@ -115,6 +119,10 @@ class BorrowService {
     return updated;
   }
 
+
+
+
+
   async reborrowOverdueBook(
     id: number,
     userId?: number
@@ -145,12 +153,20 @@ class BorrowService {
     return updated;
   }
 
+
+
+
   async getOverdueAlerts(): Promise<BorrowRecord[]> {
     const overdues = await this.borrowRepo.findUnalertedOverdues();
 
     this.logger.info(`Fetched ${overdues.length} overdue alerts`);
     return overdues;
   }
+
+
+
+
+
 
   async checkAndNotifyOverdues(employeeId: number): Promise<{ count: number }> {
     const employee = await this.employeeRepo.findOneByID(employeeId);
@@ -190,6 +206,28 @@ class BorrowService {
 
     return { count: overdueRecords.length };
   }
+
+
+
+
+
+
+  async getBorrowsByStatus(userId: number, status: BorrowStatus): Promise<BorrowRecord[]> {
+  const employee = await this.employeeRepo.findOneByID(userId);
+  if (!employee) {
+    this.logger.error(`Employee with id ${userId} not found`);
+    throw new httpException(404, "Employee not found");
+  }
+
+  const records = await this.borrowRepo.findByStatusAndUser(userId, status);
+
+  this.logger.info(
+    `Fetched ${records.length} borrow records for user ${userId} with status '${status}'`
+  );
+
+  return records;
+}
+
 }
 
 export default BorrowService;

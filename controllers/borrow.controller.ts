@@ -5,6 +5,7 @@ import BorrowService from "../services/borrow.service";
 import httpException from "../exceptions/http.exception";
 import { CreateBorrowDto } from "../dto/borrow/create-borrow.dto";
 import { ReturnBorrowDto } from "../dto/borrow/return-borrow.dto";
+import { BorrowStatus } from "../entities/enums";
 
 class BorrowController {
   constructor(private borrowService: BorrowService, router: Router) {
@@ -13,6 +14,7 @@ class BorrowController {
     router.patch("/update_status/:borrow_id", this.reborrowBook.bind(this));
     router.get("/overdue/alerts", this.getOverdueAlerts.bind(this));
     router.post("/overdue/check/:employeeId",this.checkAndNotifyOverdues.bind(this));
+    router.get("/books", this.getBorrowListByStatus.bind(this));
   }
 
   async borrowBook(req: Request, res: Response, next: NextFunction) {
@@ -93,6 +95,27 @@ class BorrowController {
       next(error);
     }
   }
+async getBorrowListByStatus(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { status } = req.query;
+    const userId = req.user?.id;
+
+    if (!status || !userId) {
+      throw new httpException(400, "Status and authenticated user ID required");
+    }
+
+    const borrows = await this.borrowService.getBorrowsByStatus(
+      userId,
+      status as BorrowStatus
+    );
+
+    res.status(200).send(borrows);
+  } catch (err) {
+    next(err);
+  }
+}
+
+
 
 }
 
