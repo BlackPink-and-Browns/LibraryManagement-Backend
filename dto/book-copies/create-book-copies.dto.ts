@@ -13,5 +13,5 @@ export class CreateBookCopyDTO {
     book_id: number;
 
     @IsNotEmpty()
-    shelf_id: string;
+    count: number;
 }

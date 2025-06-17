@@ -73,6 +73,36 @@ class BookCopyRepository {
             },
         });
     }
+
+    async findCopiesByBookID(id: number): Promise<BookCopy[]> {
+        return this.repository.find({
+            where: { ...{book: {id:Number(id)}}},
+            select: {
+                id: true,
+                is_available: true,
+                book: {
+                    id: true,
+                    title: true,
+                    isbn: true,
+                },
+                shelf: {
+                    id: true,
+                    label: true,
+                },
+                borrowRecords: {
+                    id: true,
+                    borrowedBy: true,
+                    borrowed_at: true,
+                    returned_at: true,
+                },
+            },
+            relations: {
+                book: true,
+                shelf: true,
+                borrowRecords: true,
+            },
+        });
+    }
 }
 
 export default BookCopyRepository
