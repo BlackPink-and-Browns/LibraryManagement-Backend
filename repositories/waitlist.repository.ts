@@ -10,7 +10,6 @@ class WaitlistRepository {
   }
 
   async findAllByEmployeeId(employee_id: number, status?: WaitlistStatus | "") {
-    console.log(status)
     return this.repository.find({
       where: { 
         employeeId: employee_id, 
