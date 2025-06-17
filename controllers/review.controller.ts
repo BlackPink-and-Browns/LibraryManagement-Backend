@@ -14,21 +14,17 @@ class ReviewController {
     router.post("/", this.createReview.bind(this));
     router.patch("/:id", this.updateReview.bind(this));
     router.delete("/:id", this.deleteReview.bind(this));
+    router.get("/books/:book_id/count", this.getReviewCountByBookId.bind(this));
   }
 
   async getReviewsByBookId(req: Request, res: Response, next: NextFunction) {
     try {
       const book_id = Number(req.params.book_id);
-
-      const { reviews, count } = await this.reviewService.getReviewsByBookId(
-        book_id
-      );
-
+      const reviews = await this.reviewService.getReviewsByBookId(book_id);
       const response = plainToInstance(ReviewResponseDto, reviews, {
         excludeExtraneousValues: true,
       });
-
-      res.status(200).send({ reviews: response, count });
+      res.status(200).send(response);
     } catch (err) {
       next(err);
     }
@@ -95,6 +91,22 @@ class ReviewController {
     try {
       await this.reviewService.deleteReview(req.params.id, req.user?.id);
       res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getReviewCountByBookId(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const book_id = Number(req.params.book_id);
+      if (isNaN(book_id)) throw new httpException(400, "Invalid book ID");
+
+      const count = await this.reviewService.getReviewCountByBookId(book_id);
+      res.status(200).send({ count });
     } catch (err) {
       next(err);
     }
