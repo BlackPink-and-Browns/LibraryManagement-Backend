@@ -19,11 +19,20 @@ class ReviewService {
     private bookRepository: BookRepository,
     private employeeRespository: EmployeeRepository
   ) {}
+  async getReviewsByBookId(
+    bookId: number
+  ): Promise<{ reviews: Review[]; count: number }> {
+    const book = await this.bookRepository.findOneByID(bookId);
 
-  async getReviewsByBookId(bookId: number): Promise<Review[]> {
-    const reviews = await this.reviewRepository.findByBookId(bookId);
-    this.logger.info(`Fetched ${reviews.length} reviews for book ID ${bookId}`);
-    return reviews;
+    if (!book) {
+      this.logger.error(`Book with ID ${bookId} not found`);
+      throw new httpException(404, "Book not found");
+    }
+
+    const { records: reviews, count } =
+      await this.reviewRepository.findByBookId(bookId);
+    this.logger.info(`Fetched ${count} reviews for book ID ${bookId}`);
+    return { reviews, count };
   }
 
   async getReviewsByUserId(userId: number): Promise<Review[]> {
@@ -107,7 +116,7 @@ class ReviewService {
     this.logger.info(`Review ${id} updated`);
   }
 
-  async deleteReview(id: number,userId:number): Promise<void> {
+  async deleteReview(id: number, userId: number): Promise<void> {
     const review = await this.reviewRepository.findOneByID(id);
 
     if (!review) {

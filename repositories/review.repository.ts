@@ -43,8 +43,10 @@ class ReviewRepository {
     });
   }
 
-  async findByBookId(bookId: number): Promise<Review[]> {
-    return this.repository.find({
+  async findByBookId(
+    bookId: number
+  ): Promise<{ records: Review[]; count: number }> {
+    const [records, totalCount] = await this.repository.findAndCount({
       where: {
         book: {
           id: bookId,
@@ -54,7 +56,6 @@ class ReviewRepository {
         id: true,
         rating: true,
         content: true,
-        createdAt: false,
         employee: {
           id: true,
           name: true,
@@ -64,6 +65,11 @@ class ReviewRepository {
         employee: true,
       },
     });
+
+    return {
+      records,
+      count: totalCount,
+    };
   }
 
   async findByUserId(userId: number): Promise<Review[]> {
