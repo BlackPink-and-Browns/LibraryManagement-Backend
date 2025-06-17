@@ -13,6 +13,7 @@ import authorRouter from "./routes/author.route";
 import reviewRouter from "./routes/review.route";
 import auditLogRouter from "./routes/audit.route";
 import shelfRouter from "./routes/shelf.route";
+import borrowRouter from "./routes/borrow.route";
 
 const port = process.env.PORT || 3000;
 
@@ -31,6 +32,7 @@ server.use("/shelves",authMiddleware,shelfRouter)
 server.use("/audits",auditLogRouter)
 server.use("/auth", authRouter);
 server.use("/author", authMiddleware, authorRouter);
+server.use("/borrows",authMiddleware,borrowRouter);
 server.use(errorMiddleware);
 
 
