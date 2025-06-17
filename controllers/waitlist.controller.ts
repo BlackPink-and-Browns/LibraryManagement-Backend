@@ -36,13 +36,14 @@ class WaitlistController {
   ) {
     try {
       const {status} = req.query;
-      if ( !Object.values(WaitlistStatus).includes(status) && status.trim() != "" ){
+      const finalStatus = status ? String(status).trim() : '';
+      if ( !Object.values(WaitlistStatus).includes(finalStatus as WaitlistStatus) && finalStatus != "" ){
         throw new httpException(400, "Ivalid input for query param 'status'")
       } 
       const waitlists: Waitlist[] =
         await this.waitlistService.getAllWaitlistByEmployeeId(
             req.user?.id,
-            status.trim()
+            finalStatus as WaitlistStatus
         );
       res.status(200).send(waitlists);
     } catch (err) {
