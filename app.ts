@@ -16,6 +16,8 @@ import waitlistRouter from "./routes/waitlist.route";
 import shelfRouter from "./routes/shelf.route";
 import bookRouter from "./routes/book.route";
 import bookCopyRouter from "./routes/book-copy.route";
+import borrowRouter from "./routes/borrow.route";
+import genreRouter from "./routes/genre.route";
 
 const port = process.env.PORT || 3000;
 
@@ -36,6 +38,8 @@ server.use("/audits",authMiddleware,auditLogRouter)
 server.use("/auth", authRouter);
 server.use("/author", authMiddleware, authorRouter);
 server.use("/requests/books", authMiddleware, waitlistRouter);
+server.use("/borrows",authMiddleware,borrowRouter);
+server.use("/genres",authMiddleware,genreRouter);
 server.use(errorMiddleware);
 
 

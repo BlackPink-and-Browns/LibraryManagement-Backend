@@ -1,10 +1,9 @@
 import { IsUUID, IsNotEmpty } from 'class-validator';
 
 export class CreateBorrowDto {
-  @IsUUID()
   @IsNotEmpty()
-  bookCopyId: string;
+  bookCopyId: number;
 
   @IsNotEmpty()
-  employeeId: string;
+  employeeId: number;
 }
