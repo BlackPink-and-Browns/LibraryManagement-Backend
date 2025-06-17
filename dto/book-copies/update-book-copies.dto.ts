@@ -10,8 +10,9 @@ import { Type } from "class-transformer";
 
 export class updateBookCopyDTO {
     @IsNotEmpty()
-    book_id: number;
+    copy_id: number;
 
-    @IsNotEmpty()
-    shelf_id: string;
+    shelf_id: number;
+
+    is_available: boolean
 }
