@@ -16,6 +16,9 @@ class WaitlistRepository {
         employeeId: employee_id, 
         ...(status && { status: status })
       },
+      order:{
+        updatedAt: "DESC",
+      },
       select: {
         id: true,
         employeeId: true,
@@ -25,7 +28,9 @@ class WaitlistRepository {
           title: true
         }
       },
-      relations: { book: true },
+      relations: { 
+        book: true 
+      },
     });
   }
 
