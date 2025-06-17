@@ -21,20 +21,30 @@ class NotificationRepository {
         order:{
           updatedAt: "DESC",
         },
-        // select: {
-        //   id: true,
-        //   employeeId: true,
-        //   status: true,
-        //   book: {
-        //     id: true,
-        //     title: true
-        //   }
-        // },
-        // relations: { 
-        //   book: true 
-        // },
+        select: {
+          id: true,
+          employeeId: true,
+          message: true,
+          type: true,
+          read: true,
+          createdAt: true,
+          updatedAt: true
+          }
       });
     }
+
+    async updateSelectedItem(employee_id: number,notificationId: number) : Promise<void> {
+      await this.repository.update(
+        {
+          id: notificationId,
+          employeeId: employee_id,
+        },
+        {
+          read: true
+        }
+      )
+    }
+
 }
 
 export default NotificationRepository;

@@ -15,6 +15,11 @@ class NotificationService {
             this.logger.info("Notification array returned");
             return waitlists;
         }
+
+    async updateNotification(user_id: number, notificationId: number): Promise<void> {
+        await this.notificationRepository.updateSelectedItem(user_id, notificationId)
+        this.logger.info(`Set notification to read`)
+    }
 }
 
 
