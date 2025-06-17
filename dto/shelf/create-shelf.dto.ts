@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsUUID } from 'class-validator';
 
 export class CreateShelfDto {
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  label: string;
+  label_id: number;
 
-  @IsUUID()
+  @IsNumber()
   @IsNotEmpty()
-  officeId: string;
+  officeId: number;
 }

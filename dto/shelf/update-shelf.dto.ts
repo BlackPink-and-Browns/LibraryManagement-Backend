@@ -1,11 +1,7 @@
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateShelfDto {
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  label?: string;
-
-  @IsUUID()
-  @IsOptional()
-  officeId?: string;
+  label_id: number;
 }
