@@ -19,7 +19,7 @@ export class Book extends AbstractEntity {
   @Column()
   title: string;
 
-  @Column("text", { nullable: true })
+  @Column("text")
   description: string;
 
   @Column({ nullable: true })
@@ -62,4 +62,10 @@ export class Book extends AbstractEntity {
 
   @OneToMany(() => Review, (review) => review.book)
   reviews: Review[];
+
+  @Column({ nullable: true })
+  is_available: boolean
+
+  @Column({ nullable: true })
+  avg_rating: number
 }

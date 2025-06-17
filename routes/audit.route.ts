@@ -11,5 +11,5 @@ const auditLogRepository = new AuditLogRepository(datasource.getRepository(Audit
 const auditLogService = new AuditLogService(auditLogRepository)
 const auditLogController = new AuditLogController(auditLogService,auditLogRouter)
 
-export {auditLogService}
+export {auditLogService,auditLogRepository}
 export default auditLogRouter

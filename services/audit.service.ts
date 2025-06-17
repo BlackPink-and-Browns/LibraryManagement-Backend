@@ -1,3 +1,4 @@
+import { EntityManager } from "typeorm";
 import { AuditLog } from "../entities/auditlog.entity";
 import Employee from "../entities/employee.entity";
 import AuditLogRepository from "../repositories/audit.repository";
@@ -13,21 +14,33 @@ class AuditLogService {
         entity_id?: string
     ): Promise<AuditLog[]> {
         this.logger.info("all audits returned");
-        return this.auditlogrepository.findAll(user_id = user_id,entity_id = entity_id);
+        return this.auditlogrepository.findAll(
+            (user_id = user_id),
+            (entity_id = entity_id)
+        );
     }
 
     async createAuditLog(
         action: string,
         employee_id: number,
         entity_id: string,
-        entity_type: string
+        entity_type: string,
+        manager?: EntityManager
     ): Promise<void> {
         const auditlog = new AuditLog();
         auditlog.action = action;
         auditlog.employeeId = employee_id;
         auditlog.entityId = entity_id;
         auditlog.entityType = entity_type;
-        await this.auditlogrepository.create(auditlog);
+        if (manager) {
+            const auditLogRepository = manager.getRepository(AuditLog);
+            await auditLogRepository.save(auditlog);
+        }
+        else{
+            await this.auditlogrepository.create(auditlog);
+        }
+
+        
     }
 }
 
