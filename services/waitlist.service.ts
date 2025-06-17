@@ -48,6 +48,16 @@ class WaitlistService {
         return waitlists;
     }
 
+  async updateWaitlist(user_id: number, DeleteWaitlistRequestsDto): Promise<void> {
+    if (DeleteWaitlistRequestsDto.waitlistIds.length === 0) {
+      await this.waitlistRepository.updateAllByEmployeeId(user_id)
+      this.logger.info(`Updated all waitlists of ${user_id} to REMOVED`)
+    } else {
+      await this.waitlistRepository.updateSelectedItems(user_id, DeleteWaitlistRequestsDto.waitlistIds)
+      this.logger.info(`Updated given waitlists of ${user_id} to REMOVED`)
+    }
+  }
+
 }
 
 export default WaitlistService;

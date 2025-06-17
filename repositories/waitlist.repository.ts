@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Waitlist } from "../entities/waitlist.entity";
 import { WaitlistStatus } from "../entities/enums";
 
@@ -34,8 +34,24 @@ class WaitlistRepository {
     });
   }
 
+  async updateAllByEmployeeId(employee_id: number) : Promise<void> {
+        await this.repository.update(
+          {employeeId: employee_id},
+          { status: WaitlistStatus.REMOVED }
+        )
+    }
 
-
+  async updateSelectedItems(employee_id: number, waitlistIds: number[]) : Promise<void> {
+    await this.repository.update(
+      {
+        id: In(waitlistIds),
+        employeeId: employee_id,
+      },
+      {
+        status: WaitlistStatus.REMOVED
+      }
+    )
+  }
 }
 
 export default WaitlistRepository;
