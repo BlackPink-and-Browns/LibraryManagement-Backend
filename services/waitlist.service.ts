@@ -27,6 +27,10 @@ class WaitlistService {
     newWaitListEntry.status = WaitlistStatus.REQUESTED;
     const createdWaitListEntry = this.waitlistRepository.create(newWaitListEntry);
 
+    // const newNotification = new Notification();
+    // newNotification.message = `A new user has requested for the book - ${book.title}`;
+    // newNotification.type = 
+
     auditLogService.createAuditLog(
         "CREATE",
         user_id,
@@ -37,6 +41,13 @@ class WaitlistService {
     this.logger.info("waitlist created");
     return createdWaitListEntry
   }
+
+  async getAllWaitlistByEmployeeId(user_id: number): Promise<Waitlist[]> {
+        const waitlists = await this.waitlistRepository.findAllByEmployeeId(user_id)
+        this.logger.info("Waitlist array returned");
+        return waitlists;
+    }
+
 }
 
 export default WaitlistService;
