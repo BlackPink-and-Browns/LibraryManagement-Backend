@@ -42,8 +42,8 @@ class WaitlistService {
     return createdWaitListEntry
   }
 
-  async getAllWaitlistByEmployeeId(user_id: number): Promise<Waitlist[]> {
-        const waitlists = await this.waitlistRepository.findAllByEmployeeId(user_id)
+  async getAllWaitlistByEmployeeId(user_id: number, status?: WaitlistStatus | ""): Promise<Waitlist[]> {
+        const waitlists = await this.waitlistRepository.findAllByEmployeeId(user_id, status)
         this.logger.info("Waitlist array returned");
         return waitlists;
     }

@@ -1,5 +1,6 @@
 import { Repository } from "typeorm";
 import { Waitlist } from "../entities/waitlist.entity";
+import { WaitlistStatus } from "../entities/enums";
 
 class WaitlistRepository {
   constructor(private repository: Repository<Waitlist>) {}
@@ -8,9 +9,13 @@ class WaitlistRepository {
     return this.repository.save(waitlist);
   }
 
-  async findAllByEmployeeId(employee_id: number) {
+  async findAllByEmployeeId(employee_id: number, status?: WaitlistStatus | "") {
+    console.log(status)
     return this.repository.find({
-      where: { employeeId: employee_id },
+      where: { 
+        employeeId: employee_id, 
+        ...(status && { status: status })
+      },
       select: {
         id: true,
         employeeId: true,
@@ -23,6 +28,9 @@ class WaitlistRepository {
       relations: { book: true },
     });
   }
+
+
+
 }
 
 export default WaitlistRepository;

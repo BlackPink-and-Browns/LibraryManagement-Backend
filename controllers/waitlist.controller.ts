@@ -2,6 +2,8 @@ import { Request, Response, Router, NextFunction } from "express";
 import WaitlistService from "../services/waitlist.service";
 import { Book } from "../entities/book.entity";
 import { Waitlist } from "../entities/waitlist.entity";
+import { WaitlistStatus } from "../entities/enums";
+import httpException from "../exceptions/http.exception";
 
 class WaitlistController {
   constructor(private waitlistService: WaitlistService, router: Router) {
@@ -29,8 +31,15 @@ class WaitlistController {
     next: NextFunction
   ) {
     try {
+      const {status} = req.query;
+      if ( !Object.values(WaitlistStatus).includes(status) && status.trim() != "" ){
+        throw new httpException(400, "Ivalid input for query param 'status'")
+      } 
       const waitlists: Waitlist[] =
-        await this.waitlistService.getAllWaitlistByEmployeeId(req.user?.id);
+        await this.waitlistService.getAllWaitlistByEmployeeId(
+            req.user?.id,
+            status.trim()
+        );
       res.status(200).send(waitlists);
     } catch (err) {
       console.log(err);
