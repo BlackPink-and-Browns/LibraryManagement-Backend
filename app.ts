@@ -12,6 +12,7 @@ import cors from 'cors'
 import authorRouter from "./routes/author.route";
 import reviewRouter from "./routes/review.route";
 import auditLogRouter from "./routes/audit.route";
+import waitlistRouter from "./routes/waitlist.route";
 import shelfRouter from "./routes/shelf.route";
 import borrowRouter from "./routes/borrow.route";
 
@@ -32,6 +33,7 @@ server.use("/shelves",authMiddleware,shelfRouter)
 server.use("/audits",auditLogRouter)
 server.use("/auth", authRouter);
 server.use("/author", authMiddleware, authorRouter);
+server.use("/requests/books", authMiddleware, waitlistRouter);
 server.use("/borrows",authMiddleware,borrowRouter);
 server.use(errorMiddleware);
 

@@ -10,7 +10,7 @@ import { CreateBorrowDto } from "../dto/borrow/create-borrow.dto";
 import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import { auditLogService } from "../routes/audit.route";
-import { BorrowStatus } from "../entities/enums";
+import { BorrowStatus, NotificationType } from "../entities/enums";
 import { Notification } from "../entities/notification.entity";
 import NotificationRepository from "../repositories/notification.repository";
 
@@ -183,7 +183,7 @@ class BorrowService {
       const bookTitle =
         overdue.bookCopy?.book?.title || `Book #${overdue.bookCopy?.id}`;
       notification.message = `The book "${bookTitle}" is overdue. Please return it as soon as possible.`;
-      notification.type = "OVERDUE_ALERT";
+      notification.type = NotificationType.BOOK_OVERDUE;
 
       await this.notificationRepo.create(notification);
     }
