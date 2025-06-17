@@ -9,6 +9,7 @@ import { Book } from "../entities/book.entity";
 import Employee from "../entities/employee.entity";
 import BookRepository from "../repositories/book.repository";
 import EmployeeRepository from "../repositories/employee.repository";
+import { auditLogService } from "../routes/audit.route";
 
 class ReviewService {
   private logger = LoggerService.getInstance(ReviewService.name);
@@ -56,18 +57,30 @@ class ReviewService {
       throw new httpException(409, "You have already reviewed this book");
     }
 
-    
     const review = new Review();
     review.rating = createDto.rating;
     review.content = createDto.content;
     review.book = book;
     review.employee = employee;
 
+    const createdReview = await this.reviewRepository.create(review);
+
+    auditLogService.createAuditLog(
+      "CREATE",
+      userId,
+      createdReview.id.toString(),
+      "REVIEW"
+    );
+
     this.logger.info("Review created");
-    return await this.reviewRepository.create(review);
+    return createdReview;
   }
 
-  async updateReview(id: number, updateDto: UpdateReviewDto): Promise<Review> {
+  async updateReview(
+    id: number,
+    updateDto: UpdateReviewDto,
+    userId: number
+  ): Promise<void> {
     const review = await this.reviewRepository.findOneByID(id);
     if (!review) {
       this.logger.error("Review not found");
@@ -82,18 +95,32 @@ class ReviewService {
       review.content = updateDto.content;
     }
 
-    await this.reviewRepository.update(id, review);
+    const reviewUpdated = await this.reviewRepository.update(id, review);
+
+    auditLogService.createAuditLog(
+      "UPDATE",
+      userId,
+      review.id.toString(),
+      "REVIEW"
+    );
+
     this.logger.info(`Review ${id} updated`);
-    return review;
   }
 
-  async deleteReview(id: number): Promise<void> {
+  async deleteReview(id: number,userId:number): Promise<void> {
     const review = await this.reviewRepository.findOneByID(id);
+
     if (!review) {
       this.logger.error("Review not found");
       throw new httpException(404, "Review not found");
     }
 
+    auditLogService.createAuditLog(
+      "DELETE",
+      userId,
+      review.id.toString(),
+      "REVIEW"
+    );
     await this.reviewRepository.remove(review);
     this.logger.info(`Review ${id} deleted`);
   }
