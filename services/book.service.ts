@@ -5,7 +5,7 @@ import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import { Author } from "../entities/author.entity";
 import { Genre } from "../entities/genre.entity";
-import { auditLogService } from "../routes/audit.route";
+import { auditLogRepository, auditLogService } from "../routes/audit.route";
 import { Review } from "../entities/review.entity";
 import datasource from "../db/data-source";
 import { OpenLibraryBook } from "../types/open-library-book-response.type";
@@ -30,15 +30,18 @@ class BookService {
         book.description = description;
         book.isbn = isbn;
         book.genres = genres;
-        return await datasource.transaction(async () => {
+        return await datasource.transaction(async (manager) => {
+            const bookRepo = manager.getRepository(Book);
+
+            const createdBook = await bookRepo.save(book);
             this.logger.info("Book Created");
-            const createdBook = await this.bookRepository.create(book);
-            throw new httpException(400, "qwerty");
-            auditLogService.createAuditLog(
+            // throw new httpException(400, "qwerty");
+            await auditLogService.createAuditLog(
                 "CREATE",
                 user_id,
                 createdBook.id.toString(),
-                "BOOK"
+                "BOOK",
+                manager
             );
             return createdBook;
         });
@@ -122,8 +125,8 @@ class BookService {
     async getAllBooks(): Promise<Book[]> {
         this.logger.info("Book Array Returned");
         const books = await this.bookRepository.findMany();
-        
-        return books
+
+        return books;
     }
 
     async getBookById(id: number): Promise<Book> {
@@ -132,9 +135,9 @@ class BookService {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
-        const is_available = book.copies.some(copy => copy.is_available);
-        book.is_available = is_available
-        await this.bookRepository.update(id,book)
+        const is_available = book.copies.some((copy) => copy.is_available);
+        book.is_available = is_available;
+        await this.bookRepository.update(id, book);
 
         this.logger.info("Book returned");
         return this.bookRepository.findOneByID(id);
@@ -146,9 +149,9 @@ class BookService {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
-        const is_available = book.copies.some(copy => copy.is_available);
-        book.is_available = is_available
-        await this.bookRepository.update(book.id,book)
+        const is_available = book.copies.some((copy) => copy.is_available);
+        book.is_available = is_available;
+        await this.bookRepository.update(book.id, book);
 
         this.logger.info("Book returned");
         return book;

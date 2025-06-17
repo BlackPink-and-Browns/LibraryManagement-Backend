@@ -19,6 +19,7 @@ import { EmployeeRole } from "../entities/enums";
 import { checkRole } from "../middlewares/authorization.middleware";
 
 import axios from "axios";
+import { genreService } from "../routes/genre.route";
 
 const upload = multer({ dest: "uploads/" }); // saves file to `uploads/` folder
 
@@ -26,7 +27,7 @@ class BookController {
     constructor(private bookService: BookService, router: Router) {
         router.get("/", this.getAllBooks.bind(this));
         router.get("/:id", this.getBookByID.bind(this));
-        router.get("/isbn/:isbn",this.getBookByISBN.bind(this))
+        router.get("/isbn/:isbn", this.getBookByISBN.bind(this));
         router.post(
             "/",
             checkRole([EmployeeRole.ADMIN]),
@@ -60,26 +61,26 @@ class BookController {
                 throw new httpException(400, JSON.stringify(errors));
             }
 
-            // const genres: Genre[] = await Promise.all(
-            //     createBookDto.genres.map((genre_id) =>
-            //         authorService.getGenreByID(genre_id)
-            //     )
-            // );
+            const genres: Genre[] = await Promise.all(
+                createBookDto.genres.map((genre_id) =>
+                    genreService.getGenreById(genre_id)
+                )
+            );
             const authors: Author[] = await Promise.all(
                 createBookDto.authors.map((author_id) =>
                     authorService.getAuthorByID(author_id)
                 )
             );
-            // const book: Book = await this.bookService.createBook(
-            //     createBookDto.title,
-            //     createBookDto.isbn,
-            //     createBookDto.description,
-            //     createBookDto.cover_image,
-            //     authors,
-            //     genres,
-            //     req.user?.id
-            // );
-            // res.status(201).send(book);
+            const book: Book = await this.bookService.createBook(
+                createBookDto.title,
+                createBookDto.isbn,
+                createBookDto.description,
+                createBookDto.cover_image,
+                authors,
+                genres,
+                req.user?.id
+            );
+            res.status(201).send(book);
         } catch (error) {
             console.log(error);
             next(error);
@@ -132,25 +133,25 @@ class BookController {
                     throw new httpException(400, JSON.stringify(errors));
                 }
 
-                // const genres: Genre[] = await Promise.all(
-                //     createBookDto.genres.map((genre_id) =>
-                //         authorService.getGenreByID(genre_id)
-                //     )
-                // );
+                const genres: Genre[] = await Promise.all(
+                    createBookDto.genres.map((genre_id) =>
+                        genreService.getGenreById(genre_id)
+                    )
+                );
                 const authors: Author[] = await Promise.all(
                     createBookDto.authors.map((author_id) =>
                         authorService.getAuthorByID(author_id)
                     )
                 );
-                // const b: Book = await this.bookService.createBook(
-                //     createBookDto.title,
-                //     createBookDto.isbn,
-                //     createBookDto.description,
-                //     createBookDto.cover_image,
-                //     authors,
-                //     genres,
-                //     req.user?.id
-                // );
+                const b: Book = await this.bookService.createBook(
+                    createBookDto.title,
+                    createBookDto.isbn,
+                    createBookDto.description,
+                    createBookDto.cover_image,
+                    authors,
+                    genres,
+                    req.user?.id
+                );
             });
 
             return res.status(200).send();
@@ -207,13 +208,13 @@ class BookController {
     }
 
     async getBookByISBN(req: Request, res: Response, next: NextFunction) {
-        try{
-            const book = await this.bookService.getBookByISBN(req.params.isbn)
+        try {
+            const book = await this.bookService.getBookByISBN(req.params.isbn);
             if (!book) {
                 throw new httpException(404, "book not found");
             }
             res.status(200).json(book);
-        }catch(error) {
+        } catch (error) {
             console.log(error);
             next(error);
         }
