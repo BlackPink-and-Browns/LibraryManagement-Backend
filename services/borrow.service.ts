@@ -10,9 +10,15 @@ import { CreateBorrowDto } from "../dto/borrow/create-borrow.dto";
 import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import { auditLogService } from "../routes/audit.route";
-import { BorrowStatus, NotificationType } from "../entities/enums";
+import {
+  BorrowStatus,
+  NotificationType,
+  WaitlistStatus,
+} from "../entities/enums";
 import { Notification } from "../entities/notification.entity";
 import NotificationRepository from "../repositories/notification.repository";
+import WaitlistRepository from "../repositories/waitlist.repository";
+import BookRepository from "../repositories/book.repository";
 
 class BorrowService {
   private logger = LoggerService.getInstance(BorrowService.name);
@@ -22,7 +28,8 @@ class BorrowService {
     private bookCopyRepo: BookCopyRepository,
     private employeeRepo: EmployeeRepository,
     private shelfRepo: ShelfRepository,
-    private notificationRepo: NotificationRepository
+    private notificationRepo: NotificationRepository,
+    private waitlistRepo: WaitlistRepository,
   ) {}
 
   async borrowBook(
@@ -81,7 +88,7 @@ class BorrowService {
     id: number,
     returnShelfId?: number,
     userId?: number
-  ): Promise<BorrowRecord> {
+  ): Promise<void> {
     const borrow = await this.borrowRepo.findOneByID(id);
     if (!borrow) {
       this.logger.error(`BorrowRecord with id ${id} not found`);
@@ -102,6 +109,10 @@ class BorrowService {
       borrow.returnShelf = returnShelf;
     }
 
+    // Mark returned
+    borrow.returned_at = new Date();
+    borrow.status = BorrowStatus.RETURNED;
+
     const updated = await this.borrowRepo.update(id, borrow);
 
     auditLogService.createAuditLog(
@@ -111,8 +122,46 @@ class BorrowService {
       "BORROW_RECORD"
     );
 
-    this.logger.info(`Book with borrow ID ${id} returned as ${borrow.status}`);
-    return updated;
+    this.logger.info(`Book with borrow ID ${id} returned successfully`);
+
+    const book = borrow.bookCopy?.book;
+
+    if (book) {
+      const waitlistEntries = await this.waitlistRepo.findAllByBook(
+        book,
+        WaitlistStatus.REQUESTED
+      );
+
+      // Group waitlist IDs by employeeId for batch update
+      const employeeWaitlistMap = new Map<number, number[]>();
+
+      for (const entry of waitlistEntries) {
+        const { employeeId, id: waitlistId } = entry;
+
+        const notification = new Notification();
+        notification.employeeId = employeeId;
+        notification.message = `The book "${book.title}" you requested is now available.`;
+        notification.type = NotificationType.BOOK_AVAILABLE;
+        notification.read = false;
+
+        await this.notificationRepo.create(notification);
+
+        if (!employeeWaitlistMap.has(employeeId)) {
+          employeeWaitlistMap.set(employeeId, []);
+        }
+        employeeWaitlistMap.get(employeeId)!.push(waitlistId);
+      }
+
+      for (const [employeeId, waitlistIds] of employeeWaitlistMap.entries()) {
+        await this.waitlistRepo.updateSelectedItems(
+          employeeId,
+          waitlistIds,
+          WaitlistStatus.NOTIFIED
+        );
+      }
+    } else {
+      this.logger.warn(`Book entity not found for borrow ID ${id}`);
+    }
   }
 
   async reborrowOverdueBook(
