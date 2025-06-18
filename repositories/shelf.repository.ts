@@ -11,16 +11,34 @@ class ShelfRepository {
   async findOneByID(id: number): Promise<Shelf | null> {
     return this.repository.findOne({
       where: { id },
+      select: {
+        id: true,
+        label: true,
+        office: {
+          id: true,
+          name: true,
+          address: true,
+        },
+        bookCopies: {
+          id: true,
+          is_available: true,
+          book: {
+            id: true,
+            title: true,
+            isbn: true,
+            description: true,
+          },
+        },
+      },
       relations: {
         office: true,
-        bookCopies:{
-          book:true
-        }
+        bookCopies: {
+          book: true,
+        },
       },
     });
   }
-
-async findAll(): Promise<Shelf[]> {
+  async findAll(): Promise<Shelf[]> {
     return this.repository.find({
       select: {
         id: true,
@@ -28,13 +46,24 @@ async findAll(): Promise<Shelf[]> {
         office: {
           id: true,
           name: true,
+          address: true,
+        },
+        bookCopies: {
+          id: true,
+          is_available: true,
+          book: {
+            id: true,
+            title: true,
+            isbn: true,
+            description: true,
+          },
         },
       },
       relations: {
         office: true,
         bookCopies: {
-          book: true
-        }
+          book: true,
+        },
       },
     });
   }
@@ -52,7 +81,7 @@ async findAll(): Promise<Shelf[]> {
   }
 
   async totalCount(): Promise<IntegerType> {
-    return this.repository.count()
+    return this.repository.count();
   }
 }
 
