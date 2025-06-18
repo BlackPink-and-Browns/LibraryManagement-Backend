@@ -9,10 +9,13 @@ import { auditLogRepository, auditLogService } from "../routes/audit.route";
 import { Review } from "../entities/review.entity";
 import datasource from "../db/data-source";
 import { OpenLibraryBook } from "../types/open-library-book-response.type";
-import { AuditLogType } from "../entities/enums";
+import { AuditLogType, EntityType } from "../entities/enums";
+import { UpdateBookDTO } from "../dto/books/update-book.dto";
+import { authorService } from "../routes/author.route";
+import { genreService } from "../routes/genre.route";
 
 class BookService {
-    private entityManager = datasource.manager
+    private entityManager = datasource.manager;
     private logger = LoggerService.getInstance(BookService.name);
     constructor(private bookRepository: BookRepository) {}
 
@@ -25,7 +28,6 @@ class BookService {
         genres: Genre[],
         user_id?: number
     ): Promise<Book> {
-        
         const book = new Book();
         book.authors = authors;
         book.title = title;
@@ -34,7 +36,7 @@ class BookService {
         book.isbn = isbn;
         book.genres = genres;
         return await this.entityManager.transaction(async (manager) => {
-            const m = manager.getRepository(Book)
+            const m = manager.getRepository(Book);
             const createdBook = await m.save(book);
             this.logger.info("Book Created");
             // throw new httpException(400, "qwerty");
@@ -42,7 +44,7 @@ class BookService {
                 AuditLogType.CREATE,
                 user_id,
                 createdBook.id.toString(),
-                "BOOK",
+                EntityType.BOOK,
                 manager
             );
             if (error.error) {
@@ -75,7 +77,7 @@ class BookService {
 
     async updateBook(
         id: number,
-        updateData: Partial<Book>,
+        updateData: Partial<UpdateBookDTO>,
         user_id: number
     ): Promise<void> {
         const book = await this.bookRepository.findOneByID(id);
@@ -92,20 +94,28 @@ class BookService {
             book.cover_image = updateData.cover_image;
 
         if (updateData.authors !== undefined) {
-            book.authors = updateData.authors;
+            book.authors = await Promise.all(
+                updateData.authors.map((author_id) =>
+                    authorService.getAuthorByID(author_id)
+                )
+            );
         }
         if (updateData.genres !== undefined) {
-            book.genres = updateData.genres;
+            book.genres = await Promise.all(
+                updateData.genres.map((genre_id) =>
+                    genreService.getGenreById(genre_id)
+                )
+            );
         }
         return await this.entityManager.transaction(async (manager) => {
-            const m = manager.getRepository(Book)
-            await m.save({id, ...book});
+            const m = manager.getRepository(Book);
+            await m.save({ id, ...book });
             this.logger.info("Book Updated");
             const error = await auditLogService.createAuditLog(
                 AuditLogType.UPDATE,
                 user_id,
                 id.toString(),
-                "BOOK",
+                EntityType.BOOK,
                 manager
             );
             if (error.error) {
@@ -115,21 +125,20 @@ class BookService {
     }
 
     async deleteBookById(id: number, user_id: number): Promise<void> {
-        
         const book = await this.bookRepository.findOneByID(id);
         if (!book) {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
         return await this.entityManager.transaction(async (manager) => {
-            const m = manager.getRepository(Book)
-            await m.delete({id});
+            const m = manager.getRepository(Book);
+            await m.delete({ id });
             this.logger.info("Book Deleted");
             const error = await auditLogService.createAuditLog(
                 AuditLogType.DELETE,
                 user_id,
                 id.toString(),
-                "BOOK",
+                EntityType.BOOK,
                 manager
             );
             if (error.error) {
@@ -151,9 +160,11 @@ class BookService {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
-        const is_available = book.copies.some((copy) => copy.is_available);
-        book.is_available = is_available;
-        await this.bookRepository.update(id, book);
+        if (book.copies.length !== 0) {
+            const is_available = book.copies.some((copy) => copy.is_available);
+            book.is_available = is_available;
+            await this.bookRepository.update(id, book);
+        }
 
         this.logger.info("Book returned");
         return this.bookRepository.findOneByID(id);

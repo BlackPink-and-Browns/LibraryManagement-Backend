@@ -21,6 +21,9 @@ export class BorrowRecord extends AbstractEntity {
   @Column({ type: 'timestamp', nullable: true })
   returned_at: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  expires_at: Date;
+
   @ManyToOne(() => Shelf, { nullable: true })
   @JoinColumn({ name: 'return_shelf_id' })
   returnShelf: Shelf;

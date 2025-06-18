@@ -13,6 +13,7 @@ import { auditLogService } from "../routes/audit.route";
 import {
     AuditLogType,
     BorrowStatus,
+    EntityType,
     NotificationType,
     WaitlistStatus,
 } from "../entities/enums";
@@ -32,7 +33,8 @@ class BorrowService {
         private employeeRepo: EmployeeRepository,
         private shelfRepo: ShelfRepository,
         private notificationRepo: NotificationRepository,
-        private waitlistRepo: WaitlistRepository
+        private waitlistRepo: WaitlistRepository,
+    private bookRepo: BookRepository
     ) {}
 
     async borrowBook(
@@ -61,21 +63,40 @@ class BorrowService {
             throw new httpException(400, "Book is currently not available");
         }
 
-        const hasOverdues = await this.borrowRepo.hasOverdues(employeeId);
-        if (hasOverdues) {
-            this.logger.warn(`Employee ${employeeId} has overdue books`);
-            throw new httpException(
-                403,
-                "Cannot borrow new books with overdue records"
-            );
-        }
+    const hasOverdues = await this.borrowRepo.hasOverdues(employeeId);
+    if (hasOverdues) {
+      this.logger.warn(`Employee ${employeeId} has overdue books`);
+      throw new httpException(
+        403,
+        "Cannot borrow new books with overdue records"
+      );
+    }
+
+    // 🟡 1. Mark this copy as unavailable
+    bookCopy.is_available = false;
+    await this.bookCopyRepo.update(bookCopy.id, bookCopy);
+
+    // 🟡 2. Check if ALL other copies of the book are also unavailable
+    const bookId = bookCopy.book.id;
+    const otherCopies = await this.bookCopyRepo.findCopiesByBookID(bookId); // You should implement this method
+
+    const allUnavailable = otherCopies.every((copy) => !copy.is_available);
+    if (allUnavailable) {
+      const book = await this.bookRepo.findOneByID(bookId);
+      if (book) {
+        book.is_available = false;
+        await this.bookRepo.update(bookId, book); // Pass full entity
+      }
+    }
 
         const borrow = new BorrowRecord();
         borrow.bookCopy = bookCopy;
         borrow.borrowedBy = employee;
         borrow.borrowed_at = new Date();
         borrow.status = BorrowStatus.BORROWED;
-
+    borrow.expires_at = new Date(
+      borrow.borrowed_at.getTime() + 7 * 24 * 60 * 60 * 1000
+    );
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(BorrowRecord);
             const savedBorrow = await m.save(borrow);
@@ -84,13 +105,32 @@ class BorrowService {
                 AuditLogType.CREATE,
                 userId,
                 savedBorrow.id.toString(),
-                "BORROW_RECORD",
+                EntityType.BORROW_RECORD,
                 manager
             );
             if (error.error) {
                 throw error.error;
             }
             this.logger.info(`Book borrowed with borrow ID ${savedBorrow.id}`);
+
+    // 🟢 3. Mark waitlist entry as fulfilled if exists
+    const existingWaitlist = await this.waitlistRepo.findByBookAndEmployee(
+      bookId,
+      employeeId
+    );
+
+    if (
+      existingWaitlist &&
+      existingWaitlist.status !== WaitlistStatus.FULFILLED &&
+      existingWaitlist.status !== WaitlistStatus.REMOVED
+    ) {
+      await this.waitlistRepo.update(existingWaitlist.id, {
+        status: WaitlistStatus.FULFILLED,
+      });
+      this.logger.info(
+        `Waitlist for book ${bookId} and employee ${employeeId} marked as fulfilled`
+      );
+    }
 
             return savedBorrow;
         });
@@ -132,11 +172,28 @@ class BorrowService {
 
             await m.save({id, ...borrow});
 
+    // ✅ Mark the returned BookCopy as available
+    const bookCopy = borrow.bookCopy;
+    if (bookCopy) {
+      bookCopy.is_available = true;
+      await this.bookCopyRepo.update(bookCopy.id, bookCopy);
+
+      // ✅ If the parent Book is marked unavailable, check and make it available
+      const bookId = bookCopy.book.id;
+      const book = bookCopy.book;
+
+      if (!book.is_available) {
+        book.is_available = true;
+        await this.bookRepo.update(bookId, book);
+      }
+    }
+
             const error =await auditLogService.createAuditLog(
                 "RETURN",
                 userId,
                 borrow.id.toString(),
-                "BORROW_RECORD"
+                EntityType.BORROW_RECORD,
+				manager
             );
 
             if (error.error) {
@@ -147,13 +204,12 @@ class BorrowService {
         });
 
 
-        const book = borrow.bookCopy?.book;
-        console.log("book is", book);
-        if (book) {
-            const waitlistEntries = await this.waitlistRepo.findAllByBook(
-                book.id,
-                WaitlistStatus.REQUESTED
-            );
+    const book = borrow.bookCopy?.book;
+    if (book) {
+      const waitlistEntries = await this.waitlistRepo.findAllByBook(
+        book.id,
+        WaitlistStatus.REQUESTED
+      );
 
             // Group waitlist IDs by employeeId for batch update
             const employeeWaitlistMap = new Map<number, number[]>();
@@ -208,7 +264,8 @@ class BorrowService {
             );
         }
 
-        borrow.status = BorrowStatus.BORROWED;
+    borrow.status = BorrowStatus.BORROWED;
+    borrow.expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(BorrowRecord);
@@ -218,7 +275,8 @@ class BorrowService {
                 AuditLogType.UPDATE,
                 userId,
                 borrow.id.toString(),
-                "BORROW_RECORD"
+                EntityType.BORROW_RECORD,
+				manager
             );
             if (error.error) {
                 throw error.error;
@@ -252,12 +310,12 @@ class BorrowService {
         const overdueRecords: BorrowRecord[] = [];
 
         for (const record of borrowedRecords) {
-            const borrowedDate = record.borrowed_at;
-            const daysBorrowed = Math.floor(
-                (now.getTime() - borrowedDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-
-            if (daysBorrowed > 7 && record.status !== BorrowStatus.OVERDUE) {
+            const expiresAt = record.expires_at;
+            if (
+                expiresAt &&
+              now > expiresAt &&
+              record.status !== BorrowStatus.OVERDUE
+      ) {
                 record.status = BorrowStatus.OVERDUE;
                 record.overdue_alert_sent = true;
                 overdueRecords.push(record);
@@ -269,7 +327,7 @@ class BorrowService {
                         AuditLogType.UPDATE,
                         user_id,
                         record.id.toString(),
-                        "BORROW_RECORD",
+                        EntityType.BORROW_RECORD,
                         manager
                     );
                     if (error.error) {
@@ -298,7 +356,7 @@ class BorrowService {
                     AuditLogType.UPDATE,
                     user_id,
                     notification.id.toString(),
-                    "NOTIFICATION",
+                    EntityType.NOTIFICATION,
                     manager
                 );
                 if (error.error) {

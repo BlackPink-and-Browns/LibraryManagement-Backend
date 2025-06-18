@@ -12,11 +12,11 @@ class WaitlistRepository {
 
   async findAllByEmployeeId(employee_id: number, status?: WaitlistStatus | "") {
     return this.repository.find({
-      where: { 
-        employeeId: employee_id, 
-        ...(status && { status: status })
+      where: {
+        employeeId: employee_id,
+        ...(status && { status: status }),
       },
-      order:{
+      order: {
         updatedAt: "DESC",
       },
       select: {
@@ -25,11 +25,11 @@ class WaitlistRepository {
         status: true,
         book: {
           id: true,
-          title: true
-        }
+          title: true,
+        },
       },
-      relations: { 
-        book: true 
+      relations: {
+        book: true,
       },
     });
   }
@@ -38,36 +38,39 @@ class WaitlistRepository {
     return this.repository.find({
       where: {
         book: {
-          id: book_id
+          id: book_id,
         },
-        status: status
+        status: status,
       },
       select: {
         id: true,
         employeeId: true,
-        status: true
-      }
-
-    })
+        status: true,
+      },
+    });
   }
 
-  async updateAllByEmployeeId(employee_id: number) : Promise<void> {
-        await this.repository.update(
-          {employeeId: employee_id},
-          { status: WaitlistStatus.REMOVED }
-        )
-    }
+  async updateAllByEmployeeId(employee_id: number): Promise<void> {
+    await this.repository.update(
+      { employeeId: employee_id },
+      { status: WaitlistStatus.REMOVED }
+    );
+  }
 
-  async updateSelectedItems(employee_id: number, waitlistIds: number[], status: WaitlistStatus ) : Promise<void> {
+  async updateSelectedItems(
+    employee_id: number,
+    waitlistIds: number[],
+    status: WaitlistStatus
+  ): Promise<void> {
     await this.repository.update(
       {
         id: In(waitlistIds),
         employeeId: employee_id,
       },
       {
-        status: status
+        status: status,
       }
-    )
+    );
   }
 
   async findPreviewByID(employeeId: number, book: Book): Promise<Waitlist> {
@@ -83,6 +86,25 @@ class WaitlistRepository {
       })
   }
 
+  async findByBookAndEmployee(
+    bookId: number,
+    employeeId: number
+  ): Promise<Waitlist | null> {
+    return await this.repository.findOne({
+      where: {
+        book: { id: bookId },
+        employee: { id: employeeId },
+      },
+      relations: {
+        book: true,
+        employee: true,
+      },
+    });
+  }
+
+  async update(id: number, data: Partial<Waitlist>): Promise<void> {
+    await this.repository.update(id, data);
+  }
 }
 
 export default WaitlistRepository;

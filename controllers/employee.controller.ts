@@ -15,9 +15,9 @@ class EmployeeController {
     constructor(private employeeService: EmployeeService, router: Router) {
         router.post("/",checkRole([EmployeeRole.HR,EmployeeRole.UI]), this.createEmployee.bind(this));
         router.get("/", this.getAllEmployees.bind(this));
-        router.get("/:id", this.getEmployeeByID.bind(this));
-        router.get("/profile/:id", this.getBasicEmployeeDetails.bind(this));
         router.get("/profile",this.getEmployeeLibraryDetails.bind(this))
+        router.get("/profile/:id", this.getBasicEmployeeDetails.bind(this));
+        router.get("/:id", this.getEmployeeByID.bind(this));
         router.delete("/:id",checkRole([EmployeeRole.HR]), this.deleteEmployee);
         router.put("/:id",checkRole([EmployeeRole.HR,EmployeeRole.UI]), this.updateEmployee);
     }

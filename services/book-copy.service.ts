@@ -1,7 +1,7 @@
 import datasource from "../db/data-source";
-import { updateBookCopyDTO } from "../dto/book-copies/update-book-copies.dto";
+import { UpdateBookCopyDTO } from "../dto/book-copies/update-book-copies.dto";
 import { BookCopy } from "../entities/bookcopy.entity";
-import { AuditLogType } from "../entities/enums";
+import { AuditLogType, EntityType } from "../entities/enums";
 import httpException from "../exceptions/http.exception";
 import BookCopyRepository from "../repositories/book-copies.repository";
 import { auditLogService } from "../routes/audit.route";
@@ -18,7 +18,8 @@ class BookCopyService {
         book_id: number,
         count: number,
         user_id: number
-    ): Promise<BookCopy> {
+    ): Promise<BookCopy[]> {
+        const bookCopies: BookCopy[] = []
         for (let i = 0; i < count; i++) {
             const bookCopy = new BookCopy();
             const book = await bookService.getBookById(book_id);
@@ -28,28 +29,29 @@ class BookCopyService {
             }
             bookCopy.book = book;
             bookCopy.is_available = true;
-            return await this.entityManager.transaction(async (manager) => {
+            await this.entityManager.transaction(async (manager) => {
                 const m = manager.getRepository(BookCopy);
                 const createdBookCopy = await m.save(bookCopy);
                 const error = await auditLogService.createAuditLog(
                     AuditLogType.CREATE,
                     user_id,
                     createdBookCopy.id.toString(),
-                    "BOOK",
+                    EntityType.BOOK_COPY,
                     manager
                 );
                 if (error.error) {
                     throw error.error;
                 }
                 this.logger.info("Book Copy Created");
-                return createdBookCopy;
+                bookCopies.push(createdBookCopy)
             });
         }
+        return bookCopies
     }
 
     async updateBookCopy(
         copy_id: number,
-        updateCopy: updateBookCopyDTO,
+        updateCopy: UpdateBookCopyDTO,
         user_id: number
     ): Promise<void> {
         const bookCopy = await this.bookCopyRepository.findOneByID(copy_id);
@@ -71,7 +73,7 @@ class BookCopyService {
                 AuditLogType.UPDATE,
                 user_id,
                 copy_id.toString(),
-                "BOOK",
+                EntityType.BOOK_COPY,
                 manager
             );
             if (error.error) {
@@ -94,7 +96,7 @@ class BookCopyService {
                 AuditLogType.DELETE,
                 user_id,
                 copy_id.toString(),
-                "BOOK",
+                EntityType.BOOK_COPY,
                 manager
             );
             if (error.error) {
