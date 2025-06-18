@@ -11,7 +11,7 @@ class AuditLogController {
     async getAllAuditLogs(req:Request,res:Response,next:NextFunction) {
         try {
             const {user_id,entity_id} = req.query
-            const auditLogs = await this.auditlogservice.getAllAuditLogs( Number(user_id), entity_id.toString())
+            const auditLogs = await this.auditlogservice.getAllAuditLogs( Number(user_id), entity_id)
             res.status(200).json(auditLogs)
         }
         catch (error){

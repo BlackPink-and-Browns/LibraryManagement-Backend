@@ -6,7 +6,7 @@ import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
-import { AuditLogType } from "../entities/enums";
+import { AuditLogType, EntityType } from "../entities/enums";
 
 class GenreService {
     private entityManager = datasource.manager;
@@ -45,7 +45,7 @@ class GenreService {
                 AuditLogType.CREATE,
                 userId,
                 created.id.toString(),
-                "GENRE",
+                EntityType.GENRE,
                 manager
             );
 			if (error.error) {
@@ -70,7 +70,7 @@ class GenreService {
                 AuditLogType.DELETE,
                 userId,
                 id.toString(),
-                "GENRE",
+                EntityType.GENRE,
 				manager
             );
 			if (error.error) {

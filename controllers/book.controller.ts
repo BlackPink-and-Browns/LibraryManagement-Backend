@@ -169,6 +169,7 @@ class BookController {
                 console.log(JSON.stringify(errors));
                 throw new httpException(404, JSON.stringify(errors));
             }
+            
             await this.bookService.updateBook(
                 Number(req.params.id),
                 req.body,
@@ -196,7 +197,7 @@ class BookController {
 
     async getBookByID(req: Request, res: Response, next: NextFunction) {
         try {
-            const book = this.bookService.getBookById(Number(req.params.id));
+            const book = await this.bookService.getBookById(Number(req.params.id));
             if (!book) {
                 throw new httpException(404, "book not found");
             }
