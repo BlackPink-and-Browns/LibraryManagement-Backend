@@ -4,33 +4,38 @@ import { UpdateAuthorDTO } from "../dto/authors/update-author.dto";
 import AuthorRepository from "../repositories/author.repository";
 import httpException from "../exceptions/http.exception";
 import { auditLogService } from "../routes/audit.route";
+import datasource from "../db/data-source";
+
+
 
 class AuthorService {
-  private logger = LoggerService.getInstance(AuthorService.name);
+    private enityManager = datasource.manager
+    private logger = LoggerService.getInstance(AuthorService.name);
 
-  constructor(private authorRepository: AuthorRepository) {}
+    constructor(private authorRepository: AuthorRepository) {}
 
-  async createAuthor(CreateAuthorDTO, user_id: number): Promise<Author> {
-    const newAuthor = new Author();
-    newAuthor.name = CreateAuthorDTO.name;
-    const createdAuthor = this.authorRepository.create(newAuthor);
+    async createAuthor(CreateAuthorDTO, user_id: number): Promise<Author> {
+        return await this.enityManager.transaction(async manager => {
+            const newAuthor = new Author();
+            newAuthor.name = CreateAuthorDTO.name;
+            const createdAuthor = await manager.save(newAuthor);
+            // throw new httpException(400,"sorry")
+            auditLogService.createAuditLog(
+                "CREATE",
+                user_id,
+                (await createdAuthor).id.toString(),
+                "AUTHOR"
+            );
 
-    auditLogService.createAuditLog(
-        "CREATE",
-        user_id,
-        (await createdAuthor).id.toString(),
-        "AUTHOR"
-    );
+            this.logger.info("author created");
+            return createdAuthor;
+        });
+    }
 
-    this.logger.info("author created");
-    return createdAuthor
-  }
-
-  async getAllAuthors(): Promise<Author[]> {
+    async getAllAuthors(): Promise<Author[]> {
         this.logger.info("book array returned");
         return this.authorRepository.findAll();
     }
-
 
     async getAuthorByID(id: number): Promise<Author> {
         const author = await this.authorRepository.findDetailedByID(id);
@@ -45,7 +50,7 @@ class AuthorService {
     async updateAuthor(
         id: number,
         UpdateAuthorDTO,
-        user_id: number,
+        user_id: number
     ): Promise<void> {
         const existingAuthor = await this.authorRepository.findOneByID(id);
         if (!existingAuthor) {
@@ -63,9 +68,8 @@ class AuthorService {
             "AUTHOR"
         );
 
-        this.logger.info("author updated")
+        this.logger.info("author updated");
     }
-
 }
 
 export default AuthorService;
