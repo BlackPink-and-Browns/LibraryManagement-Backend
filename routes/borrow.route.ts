@@ -26,7 +26,7 @@ const waitlistRepository=new WaitlistRepository(datasource.getRepository(Waitlis
 const borrowService = new BorrowService(borrowRepository,bookCopyRepository,employeeRepository,shelfRepository,notificationRepository,waitlistRepository);
 const borrowController = new BorrowController(borrowService,borrowRouter)
 
-export {borrowService};
+export {borrowService, borrowRepository};
 export default borrowRouter;
 
 

@@ -29,6 +29,28 @@ class AuditLogRepository {
             },
         });
     }
+
+    async findRecentLogs(take: number) {
+        return this.repository.find({
+        take,
+        order: { createdAt: 'DESC' },
+        select: {
+            createdAt: true,
+            action: true,
+            entityType: true,
+            entityId: true,
+            employee: {
+            id: true,
+            employeeID: true,
+            },
+        },
+        relations: {
+                employee: true,
+        },
+        });
+    }
+
+
 }
 
 export default AuditLogRepository;

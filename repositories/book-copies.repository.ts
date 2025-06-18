@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { IntegerType, Repository } from "typeorm";
 import { BookCopy } from "../entities/bookcopy.entity";
 
 class BookCopyRepository {
@@ -102,6 +102,10 @@ class BookCopyRepository {
                 borrowRecords: true,
             },
         });
+    }
+
+    async findCountByAvailability(is_available: boolean): Promise<IntegerType> {
+        return this.repository.count({ where: { is_available: is_available } })
     }
 }
 

@@ -156,6 +156,32 @@ class BookRepository {
     async totalCount(): Promise<IntegerType> {
         return this.repository.count()
     }
+
+    async findRecentlyCreated(take: number) {
+        return this.repository.find({
+            take,
+            order: { createdAt: 'DESC' },
+            relations: {
+                authors: true
+            },
+            select: {
+            id: true,
+            isbn: true,
+            title: true,
+            description: true,
+            cover_image: true,
+            createdAt: true,
+            authors: {
+                id: true,
+                name: true,
+            },
+            genres: {
+                id: true,
+                name: true,
+            },
+            },
+        });  
+    }
 }
 
 export default BookRepository;
