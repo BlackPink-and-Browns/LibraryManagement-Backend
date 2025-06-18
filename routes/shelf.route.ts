@@ -14,5 +14,5 @@ const officeRepository=new OfficeRepository(datasource.getRepository(Office))
 const shelfService=new ShelfService(shelfRepository,officeRepository);
 const shelfController=new ShelfController(shelfService,shelfRouter);
 
-export {shelfService}
+export {shelfService, shelfRepository}
 export default shelfRouter;
