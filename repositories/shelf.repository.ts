@@ -1,4 +1,4 @@
-import { IntegerType, Repository } from "typeorm";
+import { IntegerType, LessThan, Repository } from "typeorm";
 import { Shelf } from "../entities/shelf.entity";
 
 class ShelfRepository {
@@ -45,9 +45,25 @@ class ShelfRepository {
     return this.repository.count();
   }
 
-  async totalCount(): Promise<IntegerType> {
-    return this.repository.count()
+  async totalCount({previousCount = false}: {previousCount?: boolean}): Promise<{ totalCount: number; previousMonthCount?: number; }> {
+      const totalCount = await this.repository.count();
+      if (previousCount) {
+          const now = new Date();
+          const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+          const previousMonthCount = await this.repository.count({
+              where: {
+              createdAt: LessThan(startOfCurrentMonth),
+              },
+          });
+          return {
+              totalCount,
+              previousMonthCount,
+          };
+      }
+      return {totalCount}
   }
+
 }
 
 export default ShelfRepository;
