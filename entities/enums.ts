@@ -22,6 +22,7 @@ export enum WaitlistStatus {
   REQUESTED = 'REQUESTED',
   NOTIFIED = 'NOTIFIED',
   REMOVED = 'REMOVED',
+  FULFILLED='FULFILLED'
 }
 
 export enum NotificationType {

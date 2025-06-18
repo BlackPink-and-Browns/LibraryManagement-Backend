@@ -14,6 +14,8 @@ import NotificationRepository from '../repositories/notification.repository'
 import { Notification } from '../entities/notification.entity'
 import WaitlistRepository from '../repositories/waitlist.repository'
 import { Waitlist } from '../entities/waitlist.entity'
+import BookRepository from '../repositories/book.repository'
+import { Book } from '../entities/book.entity'
 
 const borrowRouter = express.Router()
 
@@ -23,7 +25,8 @@ const employeeRepository=new EmployeeRepository(datasource.getRepository(Employe
 const shelfRepository=new ShelfRepository(datasource.getRepository(Shelf));
 const notificationRepository=new NotificationRepository(datasource.getRepository(Notification));
 const waitlistRepository=new WaitlistRepository(datasource.getRepository(Waitlist));
-const borrowService = new BorrowService(borrowRepository,bookCopyRepository,employeeRepository,shelfRepository,notificationRepository,waitlistRepository);
+const bookRepository=new BookRepository(datasource.getRepository(Book));
+const borrowService = new BorrowService(borrowRepository,bookCopyRepository,employeeRepository,shelfRepository,notificationRepository,waitlistRepository,bookRepository);
 const borrowController = new BorrowController(borrowService,borrowRouter)
 
 export {borrowService, borrowRepository};
