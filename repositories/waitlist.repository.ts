@@ -78,6 +78,7 @@ class WaitlistRepository {
           },
           select: {
               id: true,
+              status: true,
           }
       })
   }

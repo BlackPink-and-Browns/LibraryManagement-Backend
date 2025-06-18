@@ -1,9 +1,7 @@
 import { BorrowStatus } from "../entities/enums";
 import AuditLogRepository from "../repositories/audit.repository";
-import BookCopyRepository from "../repositories/book-copies.repository";
 import BookRepository from "../repositories/book.repository";
 import BorrowRecordRepository from "../repositories/borrow.repository";
-import EmployeeRepository from "../repositories/employee.repository";
 import GenreRepository from "../repositories/genre.repository";
 import ShelfRepository from "../repositories/shelf.repository";
 import { LoggerService } from "./logger.service";

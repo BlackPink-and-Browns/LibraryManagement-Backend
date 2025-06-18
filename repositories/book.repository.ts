@@ -159,6 +159,7 @@ class BookRepository {
             select: {
                 id: true,
                 title: true,
+                is_available: true,
             }
         })
     }
