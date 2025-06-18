@@ -19,6 +19,7 @@ import bookCopyRouter from "./routes/book-copy.route";
 import borrowRouter from "./routes/borrow.route";
 import notificationRouter from "./routes/notification.route";
 import genreRouter from "./routes/genre.route";
+import analyticsRouter from "./routes/analytics.route";
 
 const port = process.env.PORT || 3000;
 
@@ -42,6 +43,7 @@ server.use("/requests/books", authMiddleware, waitlistRouter);
 server.use("/borrows",authMiddleware,borrowRouter);
 server.use("/notifications", authMiddleware, notificationRouter);
 server.use("/genres",authMiddleware,genreRouter);
+server.use("/analytics",authMiddleware,analyticsRouter);
 server.use(errorMiddleware);
 
 
