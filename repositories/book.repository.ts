@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { IntegerType, Repository } from "typeorm";
 import { Book } from "../entities/book.entity";
 
 class BookRepository {
@@ -151,6 +151,10 @@ class BookRepository {
                 title: true,
             }
         })
+    }
+
+    async totalCount(): Promise<IntegerType> {
+        return this.repository.count()
     }
 }
 

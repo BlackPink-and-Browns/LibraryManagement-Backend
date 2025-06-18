@@ -10,15 +10,14 @@ class NotificationService {
 ) {}
 
     async getAllNoticationByEmployeeId(user_id: number, read?: boolean | ""): Promise<Notification[]> {
-            this.logger.info(`${read}  ${user_id}`)
-            const waitlists = await this.notificationRepository.findAllByEmployeeId(user_id, read)
-            this.logger.info("Notification array returned");
-            return waitlists;
-        }
+        const waitlists = await this.notificationRepository.findAllByEmployeeId(user_id, read)
+        this.logger.info("notification array returned");
+        return waitlists;
+    }
 
     async updateNotification(user_id: number, notificationId: number): Promise<void> {
         await this.notificationRepository.updateSelectedItem(user_id, notificationId)
-        this.logger.info(`Set notification to read`)
+        this.logger.info(`set notification to read`)
     }
 }
 
