@@ -6,7 +6,7 @@ import httpException from "../exceptions/http.exception";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
 import { AuditLog } from "../entities/auditlog.entity";
-import { AuditLogType } from "../entities/enums";
+import { AuditLogType, EntityType } from "../entities/enums";
 import AuditLogService from "./audit.service";
 
 class AuthorService {
@@ -28,7 +28,7 @@ class AuthorService {
                 "CREATE",
                 user_id,
                 createdAuthor.id.toString(),
-                "AUTHOR",
+                EntityType.AUTHOR,
                 manager
             );
             if (error.error) {
@@ -74,7 +74,7 @@ class AuthorService {
                 "UPDATE",
                 user_id,
                 existingAuthor.id.toString(),
-                "AUTHOR",
+                EntityType.AUTHOR,
                 manager
             );
             if (error.error) {

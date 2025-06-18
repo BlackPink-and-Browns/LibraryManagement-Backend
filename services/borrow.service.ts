@@ -13,6 +13,7 @@ import { auditLogService } from "../routes/audit.route";
 import {
     AuditLogType,
     BorrowStatus,
+    EntityType,
     NotificationType,
     WaitlistStatus,
 } from "../entities/enums";
@@ -84,7 +85,7 @@ class BorrowService {
                 AuditLogType.CREATE,
                 userId,
                 savedBorrow.id.toString(),
-                "BORROW_RECORD",
+                EntityType.BORROW_RECORD,
                 manager
             );
             if (error.error) {
@@ -136,7 +137,8 @@ class BorrowService {
                 "RETURN",
                 userId,
                 borrow.id.toString(),
-                "BORROW_RECORD"
+                EntityType.BORROW_RECORD,
+				manager
             );
 
             if (error.error) {
@@ -218,7 +220,8 @@ class BorrowService {
                 AuditLogType.UPDATE,
                 userId,
                 borrow.id.toString(),
-                "BORROW_RECORD"
+                EntityType.BORROW_RECORD,
+				manager
             );
             if (error.error) {
                 throw error.error;
@@ -269,7 +272,7 @@ class BorrowService {
                         AuditLogType.UPDATE,
                         user_id,
                         record.id.toString(),
-                        "BORROW_RECORD",
+                        EntityType.BORROW_RECORD,
                         manager
                     );
                     if (error.error) {
@@ -298,7 +301,7 @@ class BorrowService {
                     AuditLogType.UPDATE,
                     user_id,
                     notification.id.toString(),
-                    "NOTIFICATION",
+                    EntityType.NOTIFICATION,
                     manager
                 );
                 if (error.error) {

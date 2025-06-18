@@ -4,13 +4,13 @@ import { Request, Response, Router, NextFunction } from "express";
 import { CreateBookCopyDTO } from "../dto/book-copies/create-book-copies.dto";
 import { validate } from "class-validator";
 import httpException from "../exceptions/http.exception";
-import { updateBookCopyDTO } from "../dto/book-copies/update-book-copies.dto";
+import { UpdateBookCopyDTO} from "../dto/book-copies/update-book-copies.dto";
 import { checkRole } from "../middlewares/authorization.middleware";
 import { EmployeeRole } from "../entities/enums";
 
 class BookCopyController {
     constructor(private bookCopyService: BookCopyService, router: Router) {
-        router.get("/:id",this.getBookCopyByCopyId.bind(this));
+        router.get("/copies/:id",this.getBookCopyByCopyId.bind(this));
         router.post("/copies",checkRole([EmployeeRole.ADMIN]),this.CreateBookCopy.bind(this));
         router.patch("/copies/:id",this.updateBookCopy.bind(this));
         router.delete("/copies/:id",checkRole([EmployeeRole.ADMIN]),this.deleteBookCopy.bind(this));
@@ -42,10 +42,10 @@ class BookCopyController {
     async updateBookCopy(req: Request, res: Response, next: NextFunction) {
         try {
             const updateBookCopyDto = plainToInstance(
-                updateBookCopyDTO,
+                UpdateBookCopyDTO,
                 req.body
             );
-            const errors = await validate(updateBookCopyDTO);
+            const errors = await validate(updateBookCopyDto);
             if (errors.length > 0) {
                 console.log(JSON.stringify(errors));
                 throw new httpException(404, JSON.stringify(errors));
