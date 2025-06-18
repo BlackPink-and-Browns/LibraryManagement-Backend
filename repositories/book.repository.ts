@@ -1,5 +1,6 @@
-import { IntegerType, Repository } from "typeorm";
+import { Between, IntegerType, LessThan, Repository } from "typeorm";
 import { Book } from "../entities/book.entity";
+import { BorrowStatus, WaitlistStatus } from "../entities/enums";
 
 class BookRepository {
     constructor(private repository: Repository<Book>) {}
@@ -158,12 +159,28 @@ class BookRepository {
             select: {
                 id: true,
                 title: true,
+                is_available: true,
             }
         })
     }
 
-    async totalCount(): Promise<IntegerType> {
-        return this.repository.count()
+    async totalCount({previousCount = false}: {previousCount?: boolean}): Promise<{ totalCount: number; previousMonthCount?: number; }> {
+        const totalCount = await this.repository.count();
+        if (previousCount) {
+            const now = new Date();
+            const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            const previousMonthCount = await this.repository.count({
+                where: {
+                createdAt: LessThan(startOfCurrentMonth),
+                },
+            });
+            return {
+                totalCount,
+                previousMonthCount,
+            };
+        }
+        return {totalCount}
     }
 
     async findRecentlyCreated(take: number) {
@@ -175,22 +192,57 @@ class BookRepository {
             },
             select: {
             id: true,
-            isbn: true,
             title: true,
-            description: true,
-            cover_image: true,
+            is_available: true,
+            avg_rating: true,
             createdAt: true,
             authors: {
                 id: true,
                 name: true,
-            },
-            genres: {
-                id: true,
-                name: true,
-            },
+                },
             },
         });  
     }
+
+    async findPopular(take: number = 3) {
+        const now = new Date();
+        const oneMonthAgo = new Date(); 
+        oneMonthAgo.setMonth(now.getMonth() - 1);
+
+        return this.repository.createQueryBuilder('book')
+            .leftJoin('book.copies', 'copy')
+            .leftJoin('copy.borrowRecords', 'borrow', 
+                `borrow.borrowed_at >= :startDate AND
+                 borrow.status = :borrowStatus  
+                `, { startDate: oneMonthAgo, borrowStatus: BorrowStatus.BORROWED })
+            .leftJoin('waitlist', 'waitlist', `
+                waitlist.book_id = book.id AND
+                waitlist.status = :waitlistStatus
+            `, { waitlistStatus: WaitlistStatus.REQUESTED })
+            .select('book.id', 'id')
+            .addSelect('book.title', 'title')
+            .addSelect('COUNT(DISTINCT borrow.id)', 'borrow_count')
+            .addSelect(`
+                COUNT(DISTINCT CASE
+                WHEN waitlist."created_at" >= :startDate THEN waitlist.id
+                ELSE NULL
+                END)
+            `, 'waitlist_count')
+            .addSelect(`
+                COUNT(DISTINCT borrow.id) +
+                COUNT(DISTINCT CASE
+                WHEN waitlist."created_at" >= :startDate THEN waitlist.id
+                ELSE NULL
+                END)
+            `, 'popularity_score')
+            .groupBy('book.id')
+            .orderBy('popularity_score', 'DESC')
+            .limit(take)
+            .setParameter('startDate', oneMonthAgo)
+            .getRawMany();
+    }
 }
+
+
 
 export default BookRepository;

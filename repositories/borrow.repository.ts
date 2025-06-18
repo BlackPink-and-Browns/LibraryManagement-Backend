@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { LessThan, Repository } from "typeorm";
 import { BorrowRecord } from "../entities/borrowrecord.entity";
 import { BorrowStatus } from "../entities/enums";
 
@@ -172,9 +172,26 @@ class BorrowRecordRepository {
     };
   }
 
-  async findCountByStatus(status: BorrowStatus) {
-    return this.repository.count({ where: { status: status } })
+  async findCountByStatus({status, previousCount = false}: {status: BorrowStatus, previousCount?: boolean}) {
+    const countByStatus = await this.repository.count({ where: { status: status } })
+    if (previousCount) {
+        const now = new Date();
+        const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        const previousMonthCount = await this.repository.count({
+            where: {
+            status: status,
+            createdAt: LessThan(startOfCurrentMonth),
+            },
+        });
+        return {
+            countByStatus,
+            previousMonthCount,
+        };
+    }
+    return {countByStatus}
   }
+
 }
 
 export default BorrowRecordRepository;

@@ -14,5 +14,5 @@ const bookRepository = new BookRepository(datasource.getRepository(Book));
 const genreService = new GenreService(genreRepository);
 const genreController = new GenreController(genreService, genreRouter);
 
-export { genreService };
+export { genreService, genreRepository };
 export default genreRouter;
