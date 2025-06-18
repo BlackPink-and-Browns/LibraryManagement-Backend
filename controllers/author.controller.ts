@@ -36,7 +36,7 @@ class AuthorController {
 
             res.status(201).send();
         } catch (err) {
-            console.log(err);
+            console.log("controller" + err);
             next(err);
         }
     }

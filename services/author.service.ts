@@ -5,27 +5,35 @@ import AuthorRepository from "../repositories/author.repository";
 import httpException from "../exceptions/http.exception";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
+import { AuditLog } from "../entities/auditlog.entity";
+import { AuditLogType } from "../entities/enums";
+import AuditLogService from "./audit.service";
 
 class AuthorService {
     private enityManager = datasource.manager;
     private logger = LoggerService.getInstance(AuthorService.name);
 
-    constructor(private authorRepository: AuthorRepository) {}
+    constructor(
+        private authorRepository: AuthorRepository,
+    ) {}
 
     async createAuthor(CreateAuthorDTO, user_id: number): Promise<Author> {
         return await this.enityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Author);
             const newAuthor = new Author();
             newAuthor.name = CreateAuthorDTO.name;
-            const createdAuthor = await manager.save(newAuthor);
-            // throw new httpException(400,"sorry")
-            auditLogService.createAuditLog(
+            const createdAuthor = await m.save(newAuthor);
+
+            const error = await auditLogService.createAuditLog(
                 "CREATE",
                 user_id,
                 createdAuthor.id.toString(),
                 "AUTHOR",
                 manager
             );
-
+            if (error.error) {
+                throw error.error;
+            }
             this.logger.info("author created");
             return createdAuthor;
         });
@@ -58,18 +66,20 @@ class AuthorService {
         }
 
         existingAuthor.name = UpdateAuthorDTO.name;
-        
-        return await this.enityManager.transaction(async (manager) => {
-            await manager.save({id, ...existingAuthor});
 
-            auditLogService.createAuditLog(
+        return await this.enityManager.transaction(async (manager) => {
+            await manager.save({ id, ...existingAuthor });
+
+            const error = await auditLogService.createAuditLog(
                 "UPDATE",
                 user_id,
-                (await existingAuthor).id.toString(),
+                existingAuthor.id.toString(),
                 "AUTHOR",
                 manager
             );
-
+            if (error.error) {
+                throw error.error;
+            }
             this.logger.info("author updated");
         });
     }

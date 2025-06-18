@@ -73,16 +73,19 @@ class BorrowService {
         borrow.status = BorrowStatus.BORROWED;
 
         return await this.entityManager.transaction(async (manager) => {
-			const m = manager.getRepository(BorrowRecord)
+            const m = manager.getRepository(BorrowRecord);
             const savedBorrow = await m.save(borrow);
 
-            auditLogService.createAuditLog(
+            const error = await auditLogService.createAuditLog(
                 AuditLogType.CREATE,
                 userId,
                 savedBorrow.id.toString(),
                 "BORROW_RECORD",
                 manager
             );
+            if (error.error) {
+                throw error.error;
+            }
             this.logger.info(`Book borrowed with borrow ID ${savedBorrow.id}`);
 
             return savedBorrow;
@@ -117,17 +120,19 @@ class BorrowService {
         }
 
         return await this.entityManager.transaction(async (manager) => {
-			const m = manager.getRepository(BorrowRecord)
+            const m = manager.getRepository(BorrowRecord);
             await m.save({ id, ...borrow });
 
-            auditLogService.createAuditLog(
+            const error = await auditLogService.createAuditLog(
                 AuditLogType.UPDATE,
                 userId,
                 borrow.id.toString(),
                 "BORROW_RECORD",
-				manager
+                manager
             );
-
+            if (error.error) {
+                throw error.error;
+            }
             this.logger.info(
                 `Book with borrow ID ${id} returned as ${borrow.status}`
             );
@@ -156,16 +161,18 @@ class BorrowService {
         borrow.status = BorrowStatus.BORROWED;
 
         return await this.entityManager.transaction(async (manager) => {
-			const m = manager.getRepository(BorrowRecord)
+            const m = manager.getRepository(BorrowRecord);
             await m.save({ id, ...borrow });
 
-            auditLogService.createAuditLog(
+            const error = await auditLogService.createAuditLog(
                 AuditLogType.UPDATE,
                 userId,
                 borrow.id.toString(),
                 "BORROW_RECORD"
             );
-
+            if (error.error) {
+                throw error.error;
+            }
             this.logger.info(
                 `Overdue borrow record ${id} set to BORROWED again`
             );
@@ -182,7 +189,7 @@ class BorrowService {
 
     async checkAndNotifyOverdues(
         employeeId: number,
-		user_id? : number
+        user_id?: number
     ): Promise<{ count: number }> {
         const employee = await this.employeeRepo.findOneByID(employeeId);
         if (!employee) {
@@ -203,23 +210,24 @@ class BorrowService {
             if (9 > 7 && record.status !== BorrowStatus.OVERDUE) {
                 record.status = BorrowStatus.OVERDUE;
                 overdueRecords.push(record);
-                await this.entityManager.transaction(async manager => {
-					const m = manager.getRepository(BorrowRecord)
-                    await m.save({id:record.id, record});
+                await this.entityManager.transaction(async (manager) => {
+                    const m = manager.getRepository(BorrowRecord);
+                    await m.save({ id: record.id, record });
 
-                    auditLogService.createAuditLog(
+                    const error = await auditLogService.createAuditLog(
                         AuditLogType.UPDATE,
                         user_id,
                         record.id.toString(),
                         "BORROW_RECORD",
-						manager
+                        manager
                     );
-
+                    if (error.error) {
+                        throw error.error;
+                    }
                     this.logger.info(
                         `Overdue borrow record ${record.id} set to BORROWED again`
                     );
                 });
-                
             }
         }
 
@@ -232,21 +240,23 @@ class BorrowService {
             notification.message = `The book "${bookTitle}" is overdue. Please return it as soon as possible.`;
             notification.type = NotificationType.BOOK_OVERDUE;
 
-			await this.entityManager.transaction(async manager => {
-					const m = manager.getRepository(Notification)
-                    await m.save(notification);
-                    auditLogService.createAuditLog(
-                        AuditLogType.UPDATE,
-                        user_id,
-                        notification.id.toString(),
-                        "NOTIFICATION",
-						manager
-                    );
-
-                    this.logger.info(
-                        `Overdue notification ${notification.id} created`
-                    );
-                });
+            await this.entityManager.transaction(async (manager) => {
+                const m = manager.getRepository(Notification);
+                await m.save(notification);
+                const error = await auditLogService.createAuditLog(
+                    AuditLogType.UPDATE,
+                    user_id,
+                    notification.id.toString(),
+                    "NOTIFICATION",
+                    manager
+                );
+                if (error.error) {
+                    throw error.error;
+                }
+                this.logger.info(
+                    `Overdue notification ${notification.id} created`
+                );
+            });
         }
 
         return { count: overdueRecords.length };

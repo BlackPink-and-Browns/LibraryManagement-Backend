@@ -1,6 +1,7 @@
 import datasource from "../db/data-source";
 import { updateBookCopyDTO } from "../dto/book-copies/update-book-copies.dto";
 import { BookCopy } from "../entities/bookcopy.entity";
+import { AuditLogType } from "../entities/enums";
 import httpException from "../exceptions/http.exception";
 import BookCopyRepository from "../repositories/book-copies.repository";
 import { auditLogService } from "../routes/audit.route";
@@ -9,7 +10,7 @@ import { shelfService } from "../routes/shelf.route";
 import { LoggerService } from "./logger.service";
 
 class BookCopyService {
-    private entityManager = datasource.manager
+    private entityManager = datasource.manager;
     private logger = LoggerService.getInstance(BookCopyService.name);
     constructor(private bookCopyRepository: BookCopyRepository) {}
 
@@ -27,18 +28,19 @@ class BookCopyService {
             }
             bookCopy.book = book;
             bookCopy.is_available = true;
-            return await this.entityManager.transaction(async manager => {
-                const m = manager.getRepository(BookCopy)
-                const createdBookCopy = await m.save(
-                    bookCopy
-                );
-                auditLogService.createAuditLog(
-                    "CREATE",
+            return await this.entityManager.transaction(async (manager) => {
+                const m = manager.getRepository(BookCopy);
+                const createdBookCopy = await m.save(bookCopy);
+                const error = await auditLogService.createAuditLog(
+                    AuditLogType.CREATE,
                     user_id,
                     createdBookCopy.id.toString(),
                     "BOOK",
                     manager
                 );
+                if (error.error) {
+                    throw error.error;
+                }
                 this.logger.info("Book Copy Created");
                 return createdBookCopy;
             });
@@ -61,40 +63,44 @@ class BookCopyService {
             const shelf = await shelfService.getOneByID(updateCopy.shelf_id);
             bookCopy.shelf = shelf;
         }
-        return await this.entityManager.transaction(async manager => {
-            const m = manager.getRepository(BookCopy)
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(BookCopy);
             await m.save({ copy_id, ...bookCopy });
             this.logger.info("Book copy Updated");
-            auditLogService.createAuditLog(
-                "UPDATE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.UPDATE,
                 user_id,
                 copy_id.toString(),
                 "BOOK",
                 manager
             );
+            if (error.error) {
+                throw error.error;
+            }
         });
     }
 
-    async deleteBookCopy(copy_id: number,user_id:number): Promise<void> {
+    async deleteBookCopy(copy_id: number, user_id: number): Promise<void> {
         const bookCopy = await this.bookCopyRepository.findOneByID(copy_id);
         if (!bookCopy) {
             this.logger.error("Book Copy does not exist");
             throw new httpException(400, "Book Copy Not Found");
         }
-        return await this.entityManager.transaction(async manager => {
-            const m = manager.getRepository(BookCopy)
-            await m.delete({id:copy_id });
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(BookCopy);
+            await m.delete({ id: copy_id });
             this.logger.info("Book Copy Deleted");
-            auditLogService.createAuditLog(
-                "DELETE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.DELETE,
                 user_id,
                 copy_id.toString(),
                 "BOOK",
                 manager
             );
+            if (error.error) {
+                throw error.error;
+            }
         });
-        
-
     }
 
     async getAllBookCopiesByBookId(book_id: number): Promise<BookCopy[]> {

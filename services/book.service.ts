@@ -9,6 +9,7 @@ import { auditLogRepository, auditLogService } from "../routes/audit.route";
 import { Review } from "../entities/review.entity";
 import datasource from "../db/data-source";
 import { OpenLibraryBook } from "../types/open-library-book-response.type";
+import { AuditLogType } from "../entities/enums";
 
 class BookService {
     private entityManager = datasource.manager
@@ -37,13 +38,16 @@ class BookService {
             const createdBook = await m.save(book);
             this.logger.info("Book Created");
             // throw new httpException(400, "qwerty");
-            await auditLogService.createAuditLog(
-                "CREATE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.CREATE,
                 user_id,
                 createdBook.id.toString(),
                 "BOOK",
                 manager
             );
+            if (error.error) {
+                throw error.error;
+            }
             return createdBook;
         });
     }
@@ -97,13 +101,16 @@ class BookService {
             const m = manager.getRepository(Book)
             await m.save({id, ...book});
             this.logger.info("Book Updated");
-            auditLogService.createAuditLog(
-                "UPDATE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.UPDATE,
                 user_id,
                 id.toString(),
                 "BOOK",
                 manager
             );
+            if (error.error) {
+                throw error.error;
+            }
         });
     }
 
@@ -118,12 +125,16 @@ class BookService {
             const m = manager.getRepository(Book)
             await m.delete({id});
             this.logger.info("Book Deleted");
-            auditLogService.createAuditLog(
-                "DELETE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.DELETE,
                 user_id,
                 id.toString(),
-                "BOOK"
+                "BOOK",
+                manager
             );
+            if (error.error) {
+                throw error.error;
+            }
         });
     }
 
