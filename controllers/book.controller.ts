@@ -125,8 +125,9 @@ class BookController {
                 throw new httpException(40, "CSV is empty or invalid");
             }
 
-            records.forEach(async (book) => {
-                const createBookDto = plainToInstance(CreateBookDTO, book);
+
+            records.forEach(async (bookRecord) => {
+                const createBookDto = plainToInstance(CreateBookDTO, bookRecord);
                 const errors = await validate(createBookDto);
                 if (errors.length > 0) {
                     console.log(JSON.stringify(errors));
@@ -143,6 +144,8 @@ class BookController {
                         authorService.getAuthorByID(author_id)
                     )
                 );
+                const book = new Book()
+
                 const b: Book = await this.bookService.createBook(
                     createBookDto.title,
                     createBookDto.isbn,
