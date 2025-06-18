@@ -13,12 +13,14 @@ class ShelfRepository {
       where: { id },
       relations: {
         office: true,
-        bookCopies:true
+        bookCopies:{
+          book:true
+        }
       },
     });
   }
 
-  async findAll(): Promise<Shelf[]> {
+async findAll(): Promise<Shelf[]> {
     return this.repository.find({
       select: {
         id: true,
@@ -30,7 +32,9 @@ class ShelfRepository {
       },
       relations: {
         office: true,
-        bookCopies:true
+        bookCopies: {
+          book: true
+        }
       },
     });
   }
