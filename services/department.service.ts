@@ -1,5 +1,6 @@
 import Department from "../entities/department.entity";
 import Employee from "../entities/employee.entity";
+import { AuditLogType, EntityType } from "../entities/enums";
 import httpException from "../exceptions/http.exception";
 import loggerMiddleware from "../loggerMiddleware";
 import DepartmentRepository from "../repositories/department.repository";
@@ -20,10 +21,10 @@ class DepartmentService {
             department
         );
         auditLogService.createAuditLog(
-            "CREATE",
+            AuditLogType.CREATE,
             user_id,
             createdDepartment.id.toString(),
-            "DEPARMENT"
+            EntityType.DEPARTMENT
         );
         return createdDepartment;
     }
@@ -90,10 +91,10 @@ class DepartmentService {
         }
         await this.departmentRepository.delete(id);
         auditLogService.createAuditLog(
-            "DELETE",
+            AuditLogType.DELETE,
             user_id,
             id.toString(),
-            "DEPARMENT"
+            EntityType.DEPARTMENT
         );
         this.logger.info("department deleted");
     }
@@ -109,10 +110,10 @@ class DepartmentService {
         existingDepartment.name = name;
         await this.departmentRepository.update(id, existingDepartment);
         auditLogService.createAuditLog(
-            "UPDATE",
+            AuditLogType.UPDATE,
             user_id,
             id.toString(),
-            "DEPARMENT"
+            EntityType.DEPARTMENT
         );
         this.logger.info("department updated");
     }
