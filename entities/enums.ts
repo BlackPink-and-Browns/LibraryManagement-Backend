@@ -19,9 +19,10 @@ export enum BorrowStatus {
 }
 
 export enum WaitlistStatus {
-    REQUESTED = "REQUESTED",
-    NOTIFIED = "NOTIFIED",
-    REMOVED = "REMOVED",
+  REQUESTED = 'REQUESTED',
+  NOTIFIED = 'NOTIFIED',
+  REMOVED = 'REMOVED',
+  FULFILLED='FULFILLED'
 }
 
 export enum NotificationType {
