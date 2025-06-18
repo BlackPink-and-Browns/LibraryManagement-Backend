@@ -13,6 +13,7 @@ class ShelfRepository {
       where: { id },
       relations: {
         office: true,
+        bookCopies:true
       },
     });
   }
@@ -29,6 +30,7 @@ class ShelfRepository {
       },
       relations: {
         office: true,
+        bookCopies:true
       },
     });
   }
