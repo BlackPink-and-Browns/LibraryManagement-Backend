@@ -7,16 +7,16 @@ import { shelfRepository } from "./shelf.route";
 import { bookCopyRepository } from "./book-copy.route";
 import { auditLogRepository } from "./audit.route";
 import { borrowRepository } from "./borrow.route";
+import { genreRepository } from "./genre.route";
 
 const analyticsRouter = express.Router();
 
 const analyticsService = new AnalyticsService(
   bookRepository,
-  employeeRepository,
   shelfRepository,
-  bookCopyRepository,
   auditLogRepository,
-  borrowRepository
+  borrowRepository,
+  genreRepository,
 );
 const analyticsController = new AnalyticsController(
   analyticsService,
