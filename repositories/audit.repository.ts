@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import { AuditLog } from "../entities/auditlog.entity";
 import { error } from "winston";
 import httpException from "../exceptions/http.exception";
+import { EntityType } from "../entities/enums";
 
 class AuditLogRepository {
   constructor(private repository: Repository<AuditLog>) {}
@@ -40,6 +41,20 @@ class AuditLogRepository {
         employee: true,
       },
     });
+  }
+
+  async countActiveUsers({previousCount = false}: {previousCount?: boolean}) {
+    const now = new Date();
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const countUniqueEmployeesCurrentMonth = await this.repository
+            .createQueryBuilder('audit_log')
+            .select('COUNT(DISTINCT audit.employeeId)', 'count')
+            .where('audit.action = :action', { action: 'CREATE' })
+            .andWhere('audit.entityType IN (:...entities)', {
+              entities: [EntityType.BORROW_RECORD, EntityType.WAITLIST],
+            })
+            .getRawOne();
   }
 }
 
