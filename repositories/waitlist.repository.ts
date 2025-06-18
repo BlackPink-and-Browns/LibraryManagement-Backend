@@ -69,6 +69,7 @@ class WaitlistRepository {
       },
       {
         status: status,
+        notification: true
       }
     );
   }
