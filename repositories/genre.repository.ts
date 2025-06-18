@@ -103,6 +103,9 @@ class GenreRepository {
         .getRawMany();
   }
 
+  async list(): Promise<Genre[]> {
+      return await this.repository.find({select: {name: true }})
+    }
 
 }
 

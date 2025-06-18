@@ -55,6 +55,10 @@ class AuthorRepository {
   async update(id: number, author: Author): Promise<void> {
     await this.repository.save({ id, ...author });
   }
+
+  async list(): Promise<Author[]> {
+    return await this.repository.find({select: {name: true }})
+  }
 }
 
 export default AuthorRepository;

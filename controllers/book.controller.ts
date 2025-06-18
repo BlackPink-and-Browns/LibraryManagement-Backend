@@ -26,20 +26,25 @@ const upload = multer({ dest: "uploads/" }); // saves file to `uploads/` folder
 class BookController {
     constructor(private bookService: BookService, router: Router) {
         router.get("/", this.getAllBooks.bind(this));
-        router.get("/:id", this.getBookByID.bind(this));
-        router.get("/isbn/:isbn", this.getBookByISBN.bind(this));
-        router.post(
-            "/",
-            checkRole([EmployeeRole.ADMIN]),
-            this.createBook.bind(this)
-        );
-        // router.post("/:isbn", checkRole([EmployeeRole.ADMIN]));
         router.post(
             "/bulk",
             checkRole([EmployeeRole.ADMIN]),
             upload.single("file"),
             this.createBookInBulk.bind(this)
         );
+        router.get(
+            "/bulk",
+            checkRole([EmployeeRole.ADMIN]),
+            this.createBookBulkTemplate.bind(this)
+        )
+        router.get("/isbn/:isbn", this.getBookByISBN.bind(this));
+        router.get("/:id", this.getBookByID.bind(this));
+        router.post(
+            "/",
+            checkRole([EmployeeRole.ADMIN]),
+            this.createBook.bind(this)
+        );
+        // router.post("/:isbn", checkRole([EmployeeRole.ADMIN]));
         router.patch(
             "/:id",
             checkRole([EmployeeRole.ADMIN]),
@@ -99,20 +104,29 @@ class BookController {
     //     }
     // }
 
+    async createBookBulkTemplate(req: Request, res: Response, next: NextFunction) {
+        try {
+            const fileBuffer = await this.bookService.createBookBulkTemplate();
+            res.setHeader("Content-Disposition", "attachment; filename=book_bulk_upload_template.xlsx");
+            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            res.send(fileBuffer);
+        } catch(error) {
+            console.log(error);
+            next(error);
+        }
+    }
+
     async createBookInBulk(req: Request, res: Response, next: NextFunction) {
         try {
-            // Get file details from req.file
             const file = req.file;
 
             if (!file) {
                 throw new httpException(400, "CSV file is required");
             }
 
-            // Access file path, name, etc.
             const filePath = file.path;
             const originalName = file.originalname;
 
-            // Read and parse the file (e.g., using fs or papaparse)
             const fs = await import("fs/promises");
             const csvContent = await fs.readFile(filePath, "utf-8");
 
@@ -159,8 +173,8 @@ class BookController {
 
             return res.status(200).send();
         } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Internal server error" });
+            console.log(error);
+            next(error);
         }
     }
 

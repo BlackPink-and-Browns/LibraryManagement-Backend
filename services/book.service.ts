@@ -13,11 +13,19 @@ import { AuditLogType, EntityType } from "../entities/enums";
 import { UpdateBookDTO } from "../dto/books/update-book.dto";
 import { authorService } from "../routes/author.route";
 import { genreService } from "../routes/genre.route";
+import AuthorRepository from "../repositories/author.repository";
+import GenreRepository from "../repositories/genre.repository";
+import { Workbook } from "exceljs";
+import setupWorksheet from "../utils/setupWorksheet";
 
 class BookService {
     private entityManager = datasource.manager;
     private logger = LoggerService.getInstance(BookService.name);
-    constructor(private bookRepository: BookRepository) {}
+    constructor(
+        private bookRepository: BookRepository,
+        private authorRepository: AuthorRepository,
+        private genreRepository: GenreRepository
+    ) {}
 
     async createBook(
         title: string,
@@ -182,6 +190,45 @@ class BookService {
 
         this.logger.info("Book returned");
         return book;
+    }
+
+    async createBookBulkTemplate(): Promise<Buffer> {
+        const authors = await this.authorRepository.list()
+        const genres = await this.genreRepository.list()
+
+        const workbook = new Workbook();
+
+        const templateSheet = setupWorksheet(workbook, {
+            name: 'Book Template',
+            headers: [
+            'ISBN',
+            'Title',
+            'Description',
+            'Cover Image URL',
+            'Author IDs (comma-separated)',
+            'Genre IDs (comma-separated)',
+            ],
+            columnWidths: [15, 30, 40, 40, 30, 30],
+        });
+
+        const dataSheet = setupWorksheet(workbook, {
+            name: 'Data Definitions',
+            headers: ['Author Name', 'Genre Name'],
+            columnWidths: [30, 30],
+        });
+
+        const maxRows = Math.max(authors.length, genres.length);
+        const rows = [];
+        for (let i = 0; i < maxRows; i++) {
+            rows.push([
+            i < authors.length ? authors[i].name : '',
+            i < genres.length ? genres[i].name : '',
+            ]);
+        }
+        dataSheet.addRows(rows);
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
     }
 }
 

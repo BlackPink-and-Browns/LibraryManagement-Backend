@@ -12,7 +12,7 @@ const authorRepository = new AuthorRepository(datasource.getRepository(Author))
 const authorService = new AuthorService(authorRepository)
 const authorController = new AuthorController(authorService,authorRouter)
 
-export {authorService}
+export {authorService, authorRepository}
 export default authorRouter
 
 
