@@ -3,8 +3,8 @@ import { Type } from 'class-transformer';
 
 export class DeleteWaitlistRequestsDto {
   @IsArray()
-  // @ArrayNotEmpty()
+//   @ArrayNotEmpty()
   @Type(() => Number)
   @IsInt({ each: true })
-  waitlistIds: number[];
-}         
+  requests: number[];
+}

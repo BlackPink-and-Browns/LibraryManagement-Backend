@@ -16,37 +16,30 @@ class WaitlistService {
 ) {}
 
   async createWaitlist(book_id: number, user_id: number): Promise<Waitlist> {
+    const newWaitListEntry = new Waitlist();
     const book = await this.bookRepository.findPreviewByID(book_id)
     if (!book) {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
-    const existingWaitlist = await this.waitlistRepository.findPreviewByID(user_id, book)
-    if (existingWaitlist) {
-      existingWaitlist.status = WaitlistStatus.REQUESTED;
-      await this.waitlistRepository.updateSelectedItems(user_id, [ existingWaitlist.id ], WaitlistStatus.REQUESTED)
-      this.logger.info("waitlist updated - changed REMOVED to REQUESTED");
-    } else {
-      const newWaitListEntry = new Waitlist();
-      newWaitListEntry.book = book;
-      newWaitListEntry.employeeId = user_id;
-      newWaitListEntry.status = WaitlistStatus.REQUESTED;
-      const createdWaitListEntry = this.waitlistRepository.create(newWaitListEntry);
+    newWaitListEntry.book = book;
+    newWaitListEntry.employeeId = user_id;
+    newWaitListEntry.status = WaitlistStatus.REQUESTED;
+    const createdWaitListEntry = this.waitlistRepository.create(newWaitListEntry);
 
-      // const newNotification = new Notification();
-      // newNotification.message = `A new user has requested for the book - ${book.title}`;
-      // newNotification.type = 
+    // const newNotification = new Notification();
+    // newNotification.message = `A new user has requested for the book - ${book.title}`;
+    // newNotification.type = 
 
-      auditLogService.createAuditLog(
-          "CREATE",
-          user_id,
-          (await createdWaitListEntry).id.toString(),
-          "WAITLIST"
-      );
+    auditLogService.createAuditLog(
+        "CREATE",
+        user_id,
+        (await createdWaitListEntry).id.toString(),
+        "WAITLIST"
+    );
 
-      this.logger.info("waitlist created");
-      return createdWaitListEntry
-    }
+    this.logger.info("waitlist created");
+    return createdWaitListEntry
   }
 
   async getAllWaitlistByEmployeeId(user_id: number, status?: WaitlistStatus | ""): Promise<Waitlist[]> {
@@ -54,16 +47,6 @@ class WaitlistService {
         this.logger.info("Waitlist array returned");
         return waitlists;
     }
-
-  async updateWaitlist(user_id: number, DeleteWaitlistRequestsDto): Promise<void> {
-    if (DeleteWaitlistRequestsDto.waitlistIds.length === 0) {
-      await this.waitlistRepository.updateAllByEmployeeId(user_id)
-      this.logger.info(`Updated all waitlists of ${user_id} to REMOVED`)
-    } else {
-      await this.waitlistRepository.updateSelectedItems(user_id, DeleteWaitlistRequestsDto.waitlistIds, WaitlistStatus.REMOVED)
-      this.logger.info(`Updated given waitlists of ${user_id} to REMOVED`)
-    }
-  }
 
 }
 
