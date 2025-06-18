@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { IntegerType, Repository } from "typeorm";
 import { Book } from "../entities/book.entity";
 
 class BookRepository {
@@ -160,6 +160,36 @@ class BookRepository {
                 title: true,
             }
         })
+    }
+
+    async totalCount(): Promise<IntegerType> {
+        return this.repository.count()
+    }
+
+    async findRecentlyCreated(take: number) {
+        return this.repository.find({
+            take,
+            order: { createdAt: 'DESC' },
+            relations: {
+                authors: true
+            },
+            select: {
+            id: true,
+            isbn: true,
+            title: true,
+            description: true,
+            cover_image: true,
+            createdAt: true,
+            authors: {
+                id: true,
+                name: true,
+            },
+            genres: {
+                id: true,
+                name: true,
+            },
+            },
+        });  
     }
 }
 

@@ -11,5 +11,5 @@ const bookCopyRepository = new BookCopyRepository(datasource.getRepository(BookC
 const bookCopyService = new BookCopyService(bookCopyRepository)
 const bookCopyController = new BookCopyController(bookCopyService,bookCopyRouter)
 
-export {bookCopyService}
+export {bookCopyService, bookCopyRepository}
 export default bookCopyRouter

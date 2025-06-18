@@ -11,5 +11,5 @@ const bookRepository = new BookRepository(datasource.getRepository(Book))
 const bookService = new BookService(bookRepository)
 const bookController = new BookController(bookService,bookRouter)
 
-export {bookService}
+export {bookService, bookRepository}
 export default bookRouter
