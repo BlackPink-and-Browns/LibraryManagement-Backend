@@ -107,20 +107,29 @@ class BorrowRecordRepository {
         borrowedBy: { id: employeeId },
         status: BorrowStatus.BORROWED,
       },
-      relations: {
-        bookCopy: {
-          book: true,
-        },
-      },
-      select: {
+       select: {
         id: true,
         borrowed_at: true,
+        expires_at:true,
         status: true,
+        returned_at:true,
+        returnShelf:true,
+        borrowedBy:true,
         bookCopy: {
           id: true,
           book: {
             title: true,
+            isbn:true,
+            authors:true,
+            avg_rating:true,
+            cover_image:true,
+            description:true
           },
+        },
+      },
+      relations: {
+        bookCopy: {
+          book: true,
         },
       },
     });
