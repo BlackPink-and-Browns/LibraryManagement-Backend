@@ -4,6 +4,7 @@ import Employee from "../entities/employee.entity";
 import AuditLogRepository from "../repositories/audit.repository";
 import { LoggerService } from "./logger.service";
 import httpException from "../exceptions/http.exception";
+import { AuditLogType, EntityType } from "../entities/enums";
 
 class AuditLogService {
     private logger = LoggerService.getInstance(AuditLogService.name);
@@ -22,10 +23,10 @@ class AuditLogService {
     }
 
     async createAuditLog(
-        action: string,
+        action: AuditLogType,
         employee_id: number,
         entity_id: string,
-        entity_type: string,
+        entity_type: EntityType,
         manager?: EntityManager
     ){
         try {

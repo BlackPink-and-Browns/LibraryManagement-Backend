@@ -1,7 +1,7 @@
 import { Repository } from "typeorm";
 import Employee from "../entities/employee.entity";
 import { EmployeeLibraryResponseDto } from "../dto/employee/employee-library-response.dto";
-import { borrowService } from "../routes/borrow.route";
+import { borrowRepository, borrowService } from "../routes/borrow.route";
 import { BorrowStatus, WaitlistStatus } from "../entities/enums";
 import { Book } from "../entities/book.entity";
 import { BookCopy } from "../entities/bookcopy.entity";
@@ -64,49 +64,62 @@ class EmployeeRepository {
         id: number
     ): Promise<EmployeeLibraryResponseDto> {
         const response = new EmployeeLibraryResponseDto();
-        const e = await this.findOneByID(id);
+        const e = await this.repository.findOne({
+            where: { id },
+            select: {
+                id: true,
+                email: true,
+                name: true,
+                borrowRecords: true,
+                waitlistEntries: true,
+                notifications: true,
+            },
+            relations: {
+                address: true,
+                department: true,
+                borrowRecords: {
+                    bookCopy:true
+                },
+                waitlistEntries: true,
+                notifications: true,
+            },
+        });
         let unread_notifications = 0;
         let current_borrowed = 0;
         let current_overdue = 0;
         let current_waitlist = 0;
-        let total_borrowed = e.borrowRecords ? e.borrowRecords.length : 0;
+        let total_borrowed = e.borrowRecords.length;
 
         const borrowed_books: BookCopy[] = [];
         const overdue_books: BookCopy[] = [];
         const book_history: BookCopy[] = [];
 
-        if (e.borrowRecords) {
-            e.borrowRecords.forEach((borrowRecord) => {
-                book_history.push(borrowRecord.bookCopy);
-                if (borrowRecord.status == BorrowStatus.BORROWED) {
-                    current_borrowed += 1;
-                    borrowed_books.push(borrowRecord.bookCopy);
-                }
-                if (borrowRecord.status == BorrowStatus.OVERDUE) {
-                    current_overdue += 1;
-                    overdue_books.push(borrowRecord.bookCopy);
-                }
-            });
-        }
+        e.borrowRecords.forEach((borrowRecord) => {
+            book_history.push(borrowRecord.bookCopy);
+            if (borrowRecord.status === BorrowStatus.BORROWED) {
+                current_borrowed += 1;
+                borrowed_books.push(borrowRecord.bookCopy);
+            }
+            if (borrowRecord.status === BorrowStatus.OVERDUE) {
+                current_overdue += 1;
+                overdue_books.push(borrowRecord.bookCopy);
+            }
+        });
 
-        if (e.notifications) {
-            e.notifications.forEach((notification) => {
-                if (notification.read == false) {
-                    unread_notifications += 1;
-                }
-            });
-        }
+        e.notifications.forEach((notification) => {
+            if (notification.read == false) {
+                unread_notifications += 1;
+            }
+        });
 
-        if (e.waitlistEntries) {
-            e.waitlistEntries.forEach((entry) => {
-                if (
-                    entry.status ==
-                    (WaitlistStatus.REQUESTED || WaitlistStatus.NOTIFIED)
-                ) {
-                    current_waitlist += 1;
-                }
-            });
-        }
+        e.waitlistEntries.forEach((entry) => {
+            if (
+                entry.status ==
+                (WaitlistStatus.REQUESTED || WaitlistStatus.NOTIFIED)
+            ) {
+                current_waitlist += 1;
+            }
+        });
 
         response.id = e.id;
         response.email = e.email;

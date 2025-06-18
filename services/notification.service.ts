@@ -1,7 +1,7 @@
 import { LoggerService } from "./logger.service";
 import NotificationRepository from "../repositories/notification.repository";
 import { Notification } from "../entities/notification.entity";
-import { EntityType, NotificationType } from "../entities/enums";
+import { AuditLogType, EntityType, NotificationType } from "../entities/enums";
 import { CreateNotificationDTO } from "../dto/notification/create-notification.dto";
 import { EntityManager } from "typeorm";
 import { error } from "winston";
@@ -45,7 +45,7 @@ class NotificationService {
         const createdNotification = await notificationManagerRepository.save(newNotification)
         
         const createdAudit = await auditLogService.createAuditLog(
-            "CREATE",
+            AuditLogType.CREATE,
             createNotificationDTO.employeeId,
             (await createdNotification).id.toString(),
             EntityType.WAITLIST,
