@@ -164,7 +164,7 @@ class BorrowService {
 
         await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(BorrowRecord);
-			const b = manager.getRepository(Book)
+			const b = manager.getRepository(BookCopy)
 
             await m.save({ id, ...borrow });
 
