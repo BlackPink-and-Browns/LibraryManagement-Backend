@@ -6,16 +6,14 @@ import httpException from "../exceptions/http.exception";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
 
-
-
 class AuthorService {
-    private enityManager = datasource.manager
+    private enityManager = datasource.manager;
     private logger = LoggerService.getInstance(AuthorService.name);
 
     constructor(private authorRepository: AuthorRepository) {}
 
     async createAuthor(CreateAuthorDTO, user_id: number): Promise<Author> {
-        return await this.enityManager.transaction(async manager => {
+        return await this.enityManager.transaction(async (manager) => {
             const newAuthor = new Author();
             newAuthor.name = CreateAuthorDTO.name;
             const createdAuthor = await manager.save(newAuthor);
@@ -23,8 +21,9 @@ class AuthorService {
             auditLogService.createAuditLog(
                 "CREATE",
                 user_id,
-                (await createdAuthor).id.toString(),
-                "AUTHOR"
+                createdAuthor.id.toString(),
+                "AUTHOR",
+                manager
             );
 
             this.logger.info("author created");
@@ -59,16 +58,20 @@ class AuthorService {
         }
 
         existingAuthor.name = UpdateAuthorDTO.name;
-        await this.authorRepository.update(id, existingAuthor);
+        
+        return await this.enityManager.transaction(async (manager) => {
+            await manager.save({id, ...existingAuthor});
 
-        auditLogService.createAuditLog(
-            "UPDATE",
-            user_id,
-            (await existingAuthor).id.toString(),
-            "AUTHOR"
-        );
+            auditLogService.createAuditLog(
+                "UPDATE",
+                user_id,
+                (await existingAuthor).id.toString(),
+                "AUTHOR",
+                manager
+            );
 
-        this.logger.info("author updated");
+            this.logger.info("author updated");
+        });
     }
 }
 

@@ -9,6 +9,7 @@ import { shelfService } from "../routes/shelf.route";
 import { LoggerService } from "./logger.service";
 
 class BookCopyService {
+    private entityManager = datasource.manager
     private logger = LoggerService.getInstance(BookCopyService.name);
     constructor(private bookCopyRepository: BookCopyRepository) {}
 
@@ -26,15 +27,17 @@ class BookCopyService {
             }
             bookCopy.book = book;
             bookCopy.is_available = true;
-            return await datasource.transaction(async () => {
-                const createdBookCopy = await this.bookCopyRepository.create(
+            return await this.entityManager.transaction(async manager => {
+                const m = manager.getRepository(BookCopy)
+                const createdBookCopy = await m.save(
                     bookCopy
                 );
                 auditLogService.createAuditLog(
                     "CREATE",
                     user_id,
                     createdBookCopy.id.toString(),
-                    "BOOK"
+                    "BOOK",
+                    manager
                 );
                 this.logger.info("Book Copy Created");
                 return createdBookCopy;
@@ -58,14 +61,16 @@ class BookCopyService {
             const shelf = await shelfService.getOneByID(updateCopy.shelf_id);
             bookCopy.shelf = shelf;
         }
-        return await datasource.transaction(async () => {
-            await this.bookCopyRepository.update(copy_id, updateCopy);
+        return await this.entityManager.transaction(async manager => {
+            const m = manager.getRepository(BookCopy)
+            await m.save({ copy_id, ...bookCopy });
             this.logger.info("Book copy Updated");
             auditLogService.createAuditLog(
                 "UPDATE",
                 user_id,
                 copy_id.toString(),
-                "BOOK"
+                "BOOK",
+                manager
             );
         });
     }
@@ -76,14 +81,16 @@ class BookCopyService {
             this.logger.error("Book Copy does not exist");
             throw new httpException(400, "Book Copy Not Found");
         }
-        return await datasource.transaction(async () => {
-            await this.bookCopyRepository.delete(copy_id);
+        return await this.entityManager.transaction(async manager => {
+            const m = manager.getRepository(BookCopy)
+            await m.delete({id:copy_id });
             this.logger.info("Book Copy Deleted");
             auditLogService.createAuditLog(
                 "DELETE",
                 user_id,
                 copy_id.toString(),
-                "BOOK"
+                "BOOK",
+                manager
             );
         });
         
