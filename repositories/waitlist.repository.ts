@@ -34,6 +34,21 @@ class WaitlistRepository {
     });
   }
 
+  async findAllByBook(book: Book, status?: WaitlistStatus) {
+    return this.repository.find({
+      where: {
+        book: book,
+        status: status
+      },
+      select: {
+        id: true,
+        employeeId: true,
+        status: true
+      }
+
+    })
+  }
+
   async updateAllByEmployeeId(employee_id: number) : Promise<void> {
         await this.repository.update(
           {employeeId: employee_id},
