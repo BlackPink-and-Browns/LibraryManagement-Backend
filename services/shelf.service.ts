@@ -7,7 +7,7 @@ import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
-import { AuditLogType } from "../entities/enums";
+import { AuditLogType, EntityType } from "../entities/enums";
 
 class ShelfService {
     private entityManager = datasource.manager;
@@ -63,7 +63,7 @@ class ShelfService {
                 "CREATE",
                 userId,
                 createdShelf.id.toString(),
-                "SHELF",
+                EntityType.SHELF,
                 manager
             );
             if (error.error) {
@@ -104,7 +104,7 @@ class ShelfService {
                 AuditLogType.UPDATE,
                 userId,
                 shelf.id.toString(),
-                "SHELF",
+                EntityType.SHELF,
                 manager
             );
             if (error.error) {
@@ -130,7 +130,7 @@ class ShelfService {
                 AuditLogType.DELETE,
                 userId,
                 shelf_id,
-                "SHELF",
+                EntityType.SHELF,
                 manager
             );
             if (error.error) {

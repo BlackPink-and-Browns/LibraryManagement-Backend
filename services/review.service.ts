@@ -11,7 +11,7 @@ import BookRepository from "../repositories/book.repository";
 import EmployeeRepository from "../repositories/employee.repository";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
-import { AuditLogType } from "../entities/enums";
+import { AuditLogType, EntityType } from "../entities/enums";
 
 class ReviewService {
     private entityManager = datasource.manager;
@@ -91,7 +91,7 @@ class ReviewService {
                 AuditLogType.CREATE,
                 userId,
                 createdReview.id.toString(),
-                "REVIEW",
+                EntityType.REVIEW,
                 manager
             );
             if (error.error) {
@@ -130,7 +130,8 @@ class ReviewService {
                 AuditLogType.UPDATE,
                 userId,
                 review.id.toString(),
-                "REVIEW"
+                EntityType.REVIEW,
+                manager
             );
             if (error.error) {
                 throw error.error;
@@ -154,7 +155,7 @@ class ReviewService {
                 AuditLogType.DELETE,
                 userId,
                 review.id.toString(),
-                "REVIEW",
+                EntityType.REVIEW,
                 manager
             );
             if (error.error) {
