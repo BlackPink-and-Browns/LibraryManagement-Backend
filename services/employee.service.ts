@@ -10,6 +10,7 @@ import { LoggerService } from "./logger.service";
 import Department from "../entities/department.entity";
 import { departmentRepository } from "../routes/department.route";
 import { auditLogService } from "../routes/audit.route";
+import { EmployeeLibraryResponseDto } from "../dto/employee/employee-library-response.dto";
 
 class EmployeeService {
     private logger = LoggerService.getInstance(EmployeeService.name);
@@ -33,6 +34,27 @@ class EmployeeService {
 
     async getEmployeeByID(id: number): Promise<Employee> {
         const employee = await this.employeeRepository.findOneByID(id);
+        if (!employee) {
+            this.logger.error("employee not found");
+            throw new httpException(400, "Employee not found");
+        }
+        this.logger.info("employee returned");
+        return employee;
+    }
+
+    async getEmployeeBasicDetails(id: number): Promise<Employee> {
+        const employee = await this.employeeRepository.findBasicEmployeeDetails(id);
+        if (!employee) {
+            this.logger.error("employee not found");
+            throw new httpException(400, "Employee not found");
+        }
+        this.logger.info("employee returned");
+        return employee;
+    }
+
+    async getEmployeeLibraryDetails(id:number) : Promise<EmployeeLibraryResponseDto> {
+
+        const employee = await this.employeeRepository.findEmployeeLibraryDetails(id);
         if (!employee) {
             this.logger.error("employee not found");
             throw new httpException(400, "Employee not found");

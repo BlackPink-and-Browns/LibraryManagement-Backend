@@ -11,7 +11,7 @@ import { UpdateAuthorDTO } from "../dto/authors/update-author.dto";
 
 class AuthorController {
     constructor(private authorService: AuthorService, router: Router) {
-        router.post("/", checkRole([EmployeeRole.ADMIN]), this.createAuthor.bind(this));
+        router.post("/", checkRole([EmployeeRole.ADMIN,EmployeeRole.HR]), this.createAuthor.bind(this));
         router.get("/", this.getAllAuthors.bind(this));
         router.get("/:id", this.getAuthorByID.bind(this));
         router.put("/:id", checkRole([EmployeeRole.ADMIN]), this.updateAuthor.bind(this));
@@ -36,7 +36,7 @@ class AuthorController {
 
             res.status(201).send();
         } catch (err) {
-            console.log(err);
+            console.log("controller" + err);
             next(err);
         }
     }

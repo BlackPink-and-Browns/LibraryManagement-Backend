@@ -1,5 +1,7 @@
 import { Repository } from "typeorm";
 import { AuditLog } from "../entities/auditlog.entity";
+import { error } from "winston";
+import httpException from "../exceptions/http.exception";
 
 class AuditLogRepository {
   constructor(private repository: Repository<AuditLog>) {}

@@ -31,7 +31,9 @@ class BorrowRecordRepository {
         },
       },
       relations: {
-        bookCopy: true,
+        bookCopy: {
+          book:true
+        },
         borrowedBy: true,
         returnShelf: true,
       },
@@ -67,9 +69,8 @@ class BorrowRecordRepository {
     return count > 0;
   }
 
-  async update(id: number, record: BorrowRecord): Promise<BorrowRecord> {
+  async update(id: number, record: BorrowRecord): Promise<void> {
     await this.repository.save({ id, ...record });
-    return this.findOneByID(id); // Return updated version with selected fields
   }
 
   async findUnalertedOverdues(): Promise<BorrowRecord[]> {

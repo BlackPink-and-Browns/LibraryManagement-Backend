@@ -9,8 +9,10 @@ import { auditLogRepository, auditLogService } from "../routes/audit.route";
 import { Review } from "../entities/review.entity";
 import datasource from "../db/data-source";
 import { OpenLibraryBook } from "../types/open-library-book-response.type";
+import { AuditLogType } from "../entities/enums";
 
 class BookService {
+    private entityManager = datasource.manager
     private logger = LoggerService.getInstance(BookService.name);
     constructor(private bookRepository: BookRepository) {}
 
@@ -23,6 +25,7 @@ class BookService {
         genres: Genre[],
         user_id?: number
     ): Promise<Book> {
+        
         const book = new Book();
         book.authors = authors;
         book.title = title;
@@ -30,19 +33,21 @@ class BookService {
         book.description = description;
         book.isbn = isbn;
         book.genres = genres;
-        return await datasource.transaction(async (manager) => {
-            const bookRepo = manager.getRepository(Book);
-
-            const createdBook = await bookRepo.save(book);
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Book)
+            const createdBook = await m.save(book);
             this.logger.info("Book Created");
             // throw new httpException(400, "qwerty");
-            await auditLogService.createAuditLog(
-                "CREATE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.CREATE,
                 user_id,
                 createdBook.id.toString(),
                 "BOOK",
                 manager
             );
+            if (error.error) {
+                throw error.error;
+            }
             return createdBook;
         });
     }
@@ -86,39 +91,50 @@ class BookService {
         if (updateData.cover_image !== undefined)
             book.cover_image = updateData.cover_image;
 
-        if (updateData.authors) {
+        if (updateData.authors !== undefined) {
             book.authors = updateData.authors;
         }
-        if (updateData.genres) {
+        if (updateData.genres !== undefined) {
             book.genres = updateData.genres;
         }
-        return await datasource.transaction(async () => {
-            await this.bookRepository.update(id, book);
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Book)
+            await m.save({id, ...book});
             this.logger.info("Book Updated");
-            auditLogService.createAuditLog(
-                "UPDATE",
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.UPDATE,
                 user_id,
                 id.toString(),
-                "BOOK"
+                "BOOK",
+                manager
             );
+            if (error.error) {
+                throw error.error;
+            }
         });
     }
 
     async deleteBookById(id: number, user_id: number): Promise<void> {
+        
         const book = await this.bookRepository.findOneByID(id);
         if (!book) {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
-        return await datasource.transaction(async () => {
-            auditLogService.createAuditLog(
-                "DELETE",
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Book)
+            await m.delete({id});
+            this.logger.info("Book Deleted");
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.DELETE,
                 user_id,
                 id.toString(),
-                "BOOK"
+                "BOOK",
+                manager
             );
-            this.logger.info("Book Deleted");
-            await this.bookRepository.delete(id);
+            if (error.error) {
+                throw error.error;
+            }
         });
     }
 
