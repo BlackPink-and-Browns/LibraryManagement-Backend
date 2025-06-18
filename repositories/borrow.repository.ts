@@ -128,8 +128,8 @@ class BorrowRecordRepository {
   async findByStatusAndUser(
     userId: number,
     status: BorrowStatus
-  ): Promise<BorrowRecord[]> {
-    return this.repository.find({
+  ): Promise<{records:BorrowRecord[];count:number}> {
+    const [records, totalCount] = await this.repository.findAndCount({
       where: {
         borrowedBy: { id: userId },
         status,
@@ -164,6 +164,11 @@ class BorrowRecordRepository {
         borrowed_at: "DESC",
       },
     });
+
+    return {
+      count: totalCount,
+      records,
+    };
   }
 }
 

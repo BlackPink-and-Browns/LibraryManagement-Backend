@@ -40,6 +40,10 @@ class ShelfRepository {
   async remove(shelf: Shelf): Promise<void> {
     await this.repository.remove(shelf);
   }
+
+  async countAll(): Promise<number> {
+    return this.repository.count();
+  }
 }
 
 export default ShelfRepository;

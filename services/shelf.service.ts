@@ -86,9 +86,12 @@ class ShelfService {
 
     const updatedShelf = await this.shelfRepository.update(id, shelf);
 
-  
-    auditLogService.createAuditLog("UPDATE", userId, shelf.id.toString(), "SHELF");
-    
+    auditLogService.createAuditLog(
+      "UPDATE",
+      userId,
+      shelf.id.toString(),
+      "SHELF"
+    );
 
     this.logger.info(`Shelf updated with id ${id}`);
     return updatedShelf;
@@ -101,13 +104,16 @@ class ShelfService {
       throw new httpException(404, "Shelf not found");
     }
 
-    const shelf_id=shelf.id.toString();
+    const shelf_id = shelf.id.toString();
     await this.shelfRepository.remove(shelf);
 
-      
     auditLogService.createAuditLog("DELETE", userId, shelf_id, "SHELF");
 
     this.logger.info(`Shelf deleted with id ${id}`);
+  }
+
+  async getShelfCount(): Promise<number> {
+    return this.shelfRepository.countAll();
   }
 }
 
