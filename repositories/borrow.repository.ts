@@ -192,10 +192,6 @@ class BorrowRecordRepository {
     return {countByStatus}
   }
 
-  async findUserCountByStatus({status, previousCount = false}: {status: BorrowStatus, previousCount?: boolean}) {
-    
-  }
-
 }
 
 export default BorrowRecordRepository;

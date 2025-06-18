@@ -4,9 +4,10 @@ import { auditLogService } from "../routes/audit.route";
 import WaitlistRepository from "../repositories/waitlist.repository";
 import { Waitlist } from "../entities/waitlist.entity";
 import BookRepository from "../repositories/book.repository";
-import { EntityType, WaitlistStatus } from "../entities/enums";
+import { EntityType, NotificationType, WaitlistStatus } from "../entities/enums";
 import { Notification } from "../entities/notification.entity";
 import datasource from "../db/data-source";
+import { notificationService } from "../routes/notification.route";
 
 class WaitlistService {
     private entityManager = datasource.manager;
@@ -47,13 +48,18 @@ class WaitlistService {
             newWaitListEntry.employeeId = user_id;
             newWaitListEntry.status = WaitlistStatus.REQUESTED;
 
-            // const newNotification = new Notification();
-            // newNotification.message = `A new user has requested for the book - ${book.title}`;
-            // newNotification.type =
             return await this.entityManager.transaction(async (manager) => {
               const m = manager.getRepository(Waitlist)
                 const createdWaitListEntry =
                     m.save(newWaitListEntry);
+                const notificationCreate = await notificationService.createNotification(
+                    {
+                        employeeId: user_id,
+                        message: `A user has requested the book - ${book.title}`,
+                        type: NotificationType.BOOK_REQUEST
+                    },
+                    manager
+                )
                 const error = await auditLogService.createAuditLog(
                     "CREATE",
                     user_id,
@@ -61,8 +67,9 @@ class WaitlistService {
                     EntityType.WAITLIST,
                     manager
                 );
-                if (error.error) {
-                    throw error.error;
+                if (error.error || notificationCreate.error ) {
+                    const throwError = error.error ? error.error : notificationCreate.error
+                    throw throwError;
                 }
 
                 this.logger.info("waitlist created");
