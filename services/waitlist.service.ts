@@ -4,7 +4,7 @@ import { auditLogService } from "../routes/audit.route";
 import WaitlistRepository from "../repositories/waitlist.repository";
 import { Waitlist } from "../entities/waitlist.entity";
 import BookRepository from "../repositories/book.repository";
-import { EntityType, WaitlistStatus } from "../entities/enums";
+import { AuditLogType, EntityType, WaitlistStatus } from "../entities/enums";
 import { Notification } from "../entities/notification.entity";
 import datasource from "../db/data-source";
 
@@ -49,7 +49,7 @@ class WaitlistService {
                 const createdWaitListEntry =
                     m.save(newWaitListEntry);
                 const error = await auditLogService.createAuditLog(
-                    "CREATE",
+                    AuditLogType.CREATE,
                     user_id,
                     (await createdWaitListEntry).id.toString(),
                     EntityType.WAITLIST,
