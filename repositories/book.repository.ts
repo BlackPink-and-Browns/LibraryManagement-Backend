@@ -36,7 +36,10 @@ class BookRepository {
                 },
                 copies: {
                     id: true,
-                    shelf: true,
+                    shelf: {
+                        label: true,
+                        office: true,
+                    },
                     is_available: true
                 },
                 reviews: {
@@ -78,7 +81,10 @@ class BookRepository {
                 },
                 copies: {
                     id: true,
-                    shelf: true,
+                    shelf: {
+                        label: true,
+                        office: true,
+                    },
                     is_available:true
                 },
                 reviews: {
@@ -121,7 +127,10 @@ class BookRepository {
                 },
                 copies: {
                     id: true,
-                    shelf: true,
+                    shelf: {
+                        label: true,
+                        office: true,
+                    },
                     is_available:true
                 },
                 reviews: {

@@ -4,6 +4,7 @@ import AuthorRepository from '../repositories/author.repository'
 import { Author } from '../entities/author.entity'
 import AuthorService from '../services/author.service'
 import AuthorController from '../controllers/author.controller'
+import { auditLogService } from './audit.route'
 
 const authorRouter = express.Router()
 
