@@ -1,4 +1,4 @@
-import { In, Repository } from "typeorm";
+import { In, IntegerType, Repository } from "typeorm";
 import { Waitlist } from "../entities/waitlist.entity";
 import { WaitlistStatus } from "../entities/enums";
 import { Book } from "../entities/book.entity";
@@ -34,10 +34,12 @@ class WaitlistRepository {
     });
   }
 
-  async findAllByBook(book: Book, status?: WaitlistStatus) {
+  async findAllByBook(book_id: number, status?: WaitlistStatus) {
     return this.repository.find({
       where: {
-        book: book,
+        book: {
+          id: book_id
+        },
         status: status
       },
       select: {

@@ -31,7 +31,9 @@ class BorrowRecordRepository {
         },
       },
       relations: {
-        bookCopy: true,
+        bookCopy: {
+          book:true
+        },
         borrowedBy: true,
         returnShelf: true,
       },
