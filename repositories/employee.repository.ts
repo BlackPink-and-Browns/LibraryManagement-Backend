@@ -36,6 +36,8 @@ class EmployeeRepository {
     async remove(employee : Employee) : Promise<void> {
         await this.repository.remove(employee)
     }
+
+    async 
 }
 
 export default EmployeeRepository

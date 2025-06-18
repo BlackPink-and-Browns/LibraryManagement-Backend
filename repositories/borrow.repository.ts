@@ -170,6 +170,10 @@ class BorrowRecordRepository {
       records,
     };
   }
+
+  async findCountByStatus(status: BorrowStatus) {
+    return this.repository.count({ where: { status: status } })
+  }
 }
 
 export default BorrowRecordRepository;

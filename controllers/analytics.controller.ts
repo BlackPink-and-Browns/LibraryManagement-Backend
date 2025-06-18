@@ -7,8 +7,18 @@ import {checkRole } from "../middlewares/authorization.middleware";
 import AnalyticsService from "../services/analytics.service";
 
 class AnalyticsController {
-    constructor(private authorService: AnalyticsService, router: Router) {
-        router.post("/", checkRole([EmployeeRole.ADMIN]), this.createAuthor.bind(this));
+    constructor(private analyticsService: AnalyticsService, router: Router) {
+        router.get("/", checkRole([EmployeeRole.ADMIN]), this.getDashboardSummary.bind(this));
+    }
+
+    async getDashboardSummary(req: Request, res: Response, next: NextFunction) {
+        try {
+            const summary = await this.analyticsService.getDashboardSummary();
+            res.status(200).send(summary);
+        } catch (err) {
+            console.log(err);
+            next(err);
+        }
     }
 
 }
