@@ -21,12 +21,25 @@ class ReviewService {
   ) {}
 
   async getReviewsByBookId(bookId: number): Promise<Review[]> {
+    const book = await this.bookRepository.findOneByID(bookId); // Check if book exists
+
+    if (!book) {
+      this.logger.error(`Book with id ${bookId} not found`);
+      throw new httpException(404, "Book not found");
+    }
+
     const reviews = await this.reviewRepository.findByBookId(bookId);
     this.logger.info(`Fetched ${reviews.length} reviews for book ID ${bookId}`);
     return reviews;
   }
 
   async getReviewsByUserId(userId: number): Promise<Review[]> {
+    const user = await this.employeeRespository.findOneByID( userId ); // Check if user exists
+    if (!user) {
+      this.logger.error(`User with id ${userId} not found`);
+      throw new httpException(404, "User not found");
+    }
+
     const reviews = await this.reviewRepository.findByUserId(userId);
     this.logger.info(`Fetched ${reviews.length} reviews for user ID ${userId}`);
     return reviews;
@@ -107,7 +120,10 @@ class ReviewService {
     this.logger.info(`Review ${id} updated`);
   }
 
-  async deleteReview(id: number,userId:number): Promise<void> {
+
+
+
+  async deleteReview(id: number, userId: number): Promise<void> {
     const review = await this.reviewRepository.findOneByID(id);
 
     if (!review) {
@@ -124,6 +140,23 @@ class ReviewService {
     await this.reviewRepository.remove(review);
     this.logger.info(`Review ${id} deleted`);
   }
+
+
+  async getReviewCountByBookId(bookId: number): Promise<number> {
+  // Check if the book exists before counting reviews
+  const book = await this.bookRepository.findOneByID(bookId);
+  if (!book) {
+    this.logger.error(`Book with id ${bookId} not found`);
+    throw new httpException(404, "Book not found");
+  }
+
+  // Return the count of reviews for the book
+  const count = await this.reviewRepository.countByBookId(bookId);
+  this.logger.info(`Fetched review count ${count} for book ID ${bookId}`);
+  return count;
+}
+
+
 }
 
 export default ReviewService;
