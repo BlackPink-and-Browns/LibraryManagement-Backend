@@ -25,7 +25,7 @@ class AuthorService {
             const createdAuthor = await m.save(newAuthor);
 
             const error = await auditLogService.createAuditLog(
-                "CREATE",
+                AuditLogType.CREATE,
                 user_id,
                 createdAuthor.id.toString(),
                 EntityType.AUTHOR,
@@ -71,7 +71,7 @@ class AuthorService {
             await manager.save({ id, ...existingAuthor });
 
             const error = await auditLogService.createAuditLog(
-                "UPDATE",
+                AuditLogType.UPDATE,
                 user_id,
                 existingAuthor.id.toString(),
                 EntityType.AUTHOR,

@@ -60,7 +60,7 @@ class ShelfService {
             const createdShelf = await m.save(shelf);
 
             const error = await auditLogService.createAuditLog(
-                "CREATE",
+                AuditLogType.CREATE,
                 userId,
                 createdShelf.id.toString(),
                 EntityType.SHELF,
