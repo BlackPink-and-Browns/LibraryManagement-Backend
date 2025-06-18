@@ -1,21 +1,21 @@
 export enum EmployeeRole {
-  UI = 'UI',
-  UX = 'UX',
-  DEVELOPER = 'DEVELOPER',
-  HR = 'HR',
-  ADMIN = 'ADMIN',
+    UI = "UI",
+    UX = "UX",
+    DEVELOPER = "DEVELOPER",
+    HR = "HR",
+    ADMIN = "ADMIN",
 }
 
 export enum EmployeeStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  PROBATION = 'PROBATION',
+    ACTIVE = "ACTIVE",
+    INACTIVE = "INACTIVE",
+    PROBATION = "PROBATION",
 }
 
 export enum BorrowStatus {
-  BORROWED = 'BORROWED',
-  RETURNED = 'RETURNED',
-  OVERDUE = 'OVERDUE',
+    BORROWED = "BORROWED",
+    RETURNED = "RETURNED",
+    OVERDUE = "OVERDUE",
 }
 
 export enum WaitlistStatus {
@@ -26,7 +26,13 @@ export enum WaitlistStatus {
 }
 
 export enum NotificationType {
-  BOOK_REQUEST = 'BOOK_REQUEST',
-  BOOK_AVAILABLE = 'BOOK_AVAILABLE',
-  BOOK_OVERDUE = 'BOOK_OVERDUE',
+    BOOK_REQUEST = "BOOK_REQUEST",
+    BOOK_AVAILABLE = "BOOK_AVAILABLE",
+    BOOK_OVERDUE = "BOOK_OVERDUE",
+}
+
+export enum AuditLogType {
+    UPDATE = "UPDATE",
+    CREATE = "CREATE",
+    DELETE = "DELETE",
 }
