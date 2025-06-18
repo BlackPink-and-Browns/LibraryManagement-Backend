@@ -29,7 +29,7 @@ class BorrowService {
     private employeeRepo: EmployeeRepository,
     private shelfRepo: ShelfRepository,
     private notificationRepo: NotificationRepository,
-    private waitlistRepo: WaitlistRepository,
+    private waitlistRepo: WaitlistRepository
   ) {}
 
   async borrowBook(
@@ -113,7 +113,7 @@ class BorrowService {
     borrow.returned_at = new Date();
     borrow.status = BorrowStatus.RETURNED;
 
-    const updated = await this.borrowRepo.update(id, borrow);
+    await this.borrowRepo.update(id, borrow);
 
     auditLogService.createAuditLog(
       "RETURN",
@@ -125,10 +125,10 @@ class BorrowService {
     this.logger.info(`Book with borrow ID ${id} returned successfully`);
 
     const book = borrow.bookCopy?.book;
-
+    console.log("book is", book);
     if (book) {
       const waitlistEntries = await this.waitlistRepo.findAllByBook(
-        book,
+        book.id,
         WaitlistStatus.REQUESTED
       );
 
@@ -137,7 +137,7 @@ class BorrowService {
 
       for (const entry of waitlistEntries) {
         const { employeeId, id: waitlistId } = entry;
-
+        console.log("in for");
         const notification = new Notification();
         notification.employeeId = employeeId;
         notification.message = `The book "${book.title}" you requested is now available.`;
@@ -219,8 +219,9 @@ class BorrowService {
         (now.getTime() - borrowedDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      if (9 > 7 && record.status !== BorrowStatus.OVERDUE) {
+      if (daysBorrowed > 7 && record.status !== BorrowStatus.OVERDUE) {
         record.status = BorrowStatus.OVERDUE;
+        record.overdue_alert_sent = true;
         overdueRecords.push(record);
         await this.borrowRepo.update(record.id, record);
       }
