@@ -16,6 +16,8 @@ class EmployeeController {
         router.post("/",checkRole([EmployeeRole.HR,EmployeeRole.UI]), this.createEmployee.bind(this));
         router.get("/", this.getAllEmployees.bind(this));
         router.get("/:id", this.getEmployeeByID.bind(this));
+        router.get("/profile/:id", this.getBasicEmployeeDetails.bind(this));
+        router.get("/profile",this.getEmployeeLibraryDetails.bind(this))
         router.delete("/:id",checkRole([EmployeeRole.HR]), this.deleteEmployee);
         router.put("/:id",checkRole([EmployeeRole.HR,EmployeeRole.UI]), this.updateEmployee);
     }
@@ -29,6 +31,36 @@ class EmployeeController {
         try {
             const e = await this.employeeService.getEmployeeByID(
                 Number(req.params.id)
+            );
+            if (!e) {
+                throw new httpException(404, "employee not found");
+            }
+            res.status(200).send(e);
+        } catch (err) {
+            console.log(err);
+            next(err);
+        }
+    }
+
+    async getBasicEmployeeDetails(req: Request, res: Response, next: NextFunction) {
+        try {
+            const e = await this.employeeService.getEmployeeBasicDetails(
+                Number(req.params.id)
+            );
+            if (!e) {
+                throw new httpException(404, "employee not found");
+            }
+            res.status(200).send(e);
+        } catch (err) {
+            console.log(err);
+            next(err);
+        }
+    }
+
+    async getEmployeeLibraryDetails(req: Request, res: Response, next: NextFunction) {
+        try {
+            const e = await this.employeeService.getEmployeeLibraryDetails(
+                Number(req.user?.id)
             );
             if (!e) {
                 throw new httpException(404, "employee not found");

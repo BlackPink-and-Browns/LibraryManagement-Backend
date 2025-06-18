@@ -5,60 +5,80 @@ import BookRepository from "../repositories/book.repository";
 import httpException from "../exceptions/http.exception";
 import { LoggerService } from "./logger.service";
 import { auditLogService } from "../routes/audit.route";
+import datasource from "../db/data-source";
+import { AuditLogType } from "../entities/enums";
 
 class GenreService {
-  private logger = LoggerService.getInstance(GenreService.name);
+    private entityManager = datasource.manager;
+    private logger = LoggerService.getInstance(GenreService.name);
 
-  constructor(
-    private genreRepository: GenreRepository,
-  ) {}
+    constructor(private genreRepository: GenreRepository) {}
 
-  async getAllGenres(): Promise<Genre[]> {
-    this.logger.info("Fetched all genres");
-    return this.genreRepository.findAll();
-  }
-
-  async getGenreById(id: number): Promise<Genre> {
-    const genre = await this.genreRepository.findOneByID(id);
-    if (!genre) {
-      this.logger.error(`Genre with id ${id} not found`);
-      throw new httpException(404, "Genre not found");
+    async getAllGenres(): Promise<Genre[]> {
+        this.logger.info("Fetched all genres");
+        return this.genreRepository.findAll();
     }
-    this.logger.info(`Fetched genre with ID ${id}`);
-    return genre;
-  }
 
-  async createGenre(createDto: CreateGenreDTO, userId?: number): Promise<Genre> {
-    const genre = new Genre();
-    genre.name = createDto.name;
-    genre.description = createDto.description;
+    async getGenreById(id: number): Promise<Genre> {
+        const genre = await this.genreRepository.findOneByID(id);
+        if (!genre) {
+            this.logger.error(`Genre with id ${id} not found`);
+            throw new httpException(404, "Genre not found");
+        }
+        this.logger.info(`Fetched genre with ID ${id}`);
+        return genre;
+    }
 
-    const created = await this.genreRepository.create(genre);
+    async createGenre(
+        createDto: CreateGenreDTO,
+        userId?: number
+    ): Promise<Genre> {
+        const genre = new Genre();
+        genre.name = createDto.name;
+        genre.description = createDto.description;
 
-    auditLogService.createAuditLog(
-      "CREATE",
-      userId,
-      created.id.toString(),
-      "GENRE"
-    );
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Genre);
+            const created = await m.save(genre);
 
-    this.logger.info(`Created genre with ID ${created.id}`);
-    return created;
-  }
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.CREATE,
+                userId,
+                created.id.toString(),
+                "GENRE",
+                manager
+            );
+			if (error.error) {
+                throw error.error;
+            }
+            this.logger.info(`Created genre with ID ${created.id}`);
+            return created;
+        });
+    }
 
-  async deleteGenre(id: number, userId?: number): Promise<void> {
-  const genre = await this.genreRepository.findOneByID(id);
-  if (!genre) {
-    this.logger.error(`Genre with id ${id} not found`);
-    throw new httpException(404, "Genre not found");
-  }
+    async deleteGenre(id: number, userId?: number): Promise<void> {
+        const genre = await this.genreRepository.findOneByID(id);
+        if (!genre) {
+            this.logger.error(`Genre with id ${id} not found`);
+            throw new httpException(404, "Genre not found");
+        }
+        return await this.entityManager.transaction(async (manager) => {
+			const m = manager.getRepository(Genre)
+            await this.genreRepository.remove(genre);
 
-  await this.genreRepository.remove(genre);
-
-  auditLogService.createAuditLog("DELETE", userId, id.toString(), "GENRE");
-  this.logger.info(`Deleted genre with ID ${id}`);
-}
-
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.DELETE,
+                userId,
+                id.toString(),
+                "GENRE",
+				manager
+            );
+			if (error.error) {
+                throw error.error;
+            }
+            this.logger.info(`Deleted genre with ID ${id}`);
+        });
+    }
 }
 
 export default GenreService;
