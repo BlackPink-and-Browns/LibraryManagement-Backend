@@ -112,6 +112,17 @@ class ReviewRepository {
   async remove(review: Review): Promise<void> {
     await this.repository.remove(review);
   }
+
+  async countByBookId(bookId: number): Promise<number> {
+  return this.repository.count({
+    where: {
+      book: {
+        id: bookId,
+      },
+    },
+  });
+}
+
 }
 
 export default ReviewRepository;

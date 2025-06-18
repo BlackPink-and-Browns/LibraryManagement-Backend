@@ -9,6 +9,7 @@ import { UpdateShelfDto } from "../dto/shelf/update-shelf.dto";
 class ShelfController {
   constructor(private shelfService: ShelfService, router: Router) {
     router.get("/", this.getAllShelves.bind(this));
+     router.get("/count", this.getShelfCount.bind(this));
     router.get("/:id", this.getShelfById.bind(this));
     router.post("/", this.createShelf.bind(this));
     router.patch("/:id", this.updateShelf.bind(this));
@@ -42,7 +43,7 @@ class ShelfController {
       if (errors.length > 0) {
         throw new httpException(400, JSON.stringify(errors));
       }
-      const shelf = await this.shelfService.create(createDto,req.user?.id);
+      const shelf = await this.shelfService.create(createDto, req.user?.id);
       res.status(201).send(shelf);
     } catch (err) {
       next(err);
@@ -58,7 +59,11 @@ class ShelfController {
         throw new httpException(400, JSON.stringify(errors));
       }
 
-      const updated = await this.shelfService.update(id, updateDto,req.user?.id);
+      const updated = await this.shelfService.update(
+        id,
+        updateDto,
+        req.user?.id
+      );
       res.status(200).send(updated);
     } catch (err) {
       next(err);
@@ -68,8 +73,17 @@ class ShelfController {
   async deleteShelf(req: Request, res: Response, next: NextFunction) {
     try {
       const id = Number(req.params.id);
-      await this.shelfService.delete(id,req.user?.id);
+      await this.shelfService.delete(id, req.user?.id);
       res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getShelfCount(req: Request, res: Response, next: NextFunction) {
+    try {
+      const count = await this.shelfService.getShelfCount();
+      res.status(200).send({ count });
     } catch (err) {
       next(err);
     }
