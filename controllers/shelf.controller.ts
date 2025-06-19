@@ -9,7 +9,7 @@ import { UpdateShelfDto } from "../dto/shelf/update-shelf.dto";
 class ShelfController {
   constructor(private shelfService: ShelfService, router: Router) {
     router.get("/", this.getAllShelves.bind(this));
-     router.get("/count", this.getShelfCount.bind(this));
+    router.get("/count", this.getShelfCount.bind(this));
     router.get("/:id", this.getShelfById.bind(this));
     router.post("/", this.createShelf.bind(this));
     router.patch("/:id", this.updateShelf.bind(this));
