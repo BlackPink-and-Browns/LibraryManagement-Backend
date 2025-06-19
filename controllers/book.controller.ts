@@ -7,21 +7,16 @@ import { validate } from "class-validator";
 import { authorService } from "../routes/author.route";
 import { Author } from "../entities/author.entity";
 import { Genre } from "../entities/genre.entity";
-import { Review } from "../entities/review.entity";
-import { reviewService } from "../routes/review.route";
 import { UpdateBookDTO } from "../dto/books/update-book.dto";
 import { Book } from "../entities/book.entity";
 
 import multer from "multer";
-import * as fs from "fs/promises";
-import * as Papa from "papaparse";
 import { EmployeeRole } from "../entities/enums";
 import { checkRole } from "../middlewares/authorization.middleware";
 
-import axios from "axios";
 import { genreService } from "../routes/genre.route";
 
-const upload = multer({ storage: multer.memoryStorage() }); // saves file to `uploads/` folder
+const upload = multer({ storage: multer.memoryStorage() });
 
 class BookController {
     constructor(private bookService: BookService, router: Router) {
@@ -91,18 +86,6 @@ class BookController {
             next(error);
         }
     }
-
-    // async createBookUsingISBN(req: Request, res: Response, next: NextFunction) {
-    //     try {
-    //         const response = await axios.get(
-    //             "https://openlibrary.org/books/OL7353617M.json"
-    //         );
-    //         const book = this.bookService.createBookUsingISBN(response.data)
-    //     } catch (error) {
-    //         console.log(error);
-    //         next(error);
-    //     }
-    // }
 
     async createBookBulkTemplate(req: Request, res: Response, next: NextFunction) {
         try {
