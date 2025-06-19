@@ -1,17 +1,18 @@
-import { Type } from "class-transformer";
-import { IsArray, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class ErrorItemDto {
-  @IsString()
-  error: string;
+export class BulkUploadError {
+  @IsNumber()
+  row: number;
 
-  @IsString()
-  raw: string;
+  @IsArray()
+  @IsString({ each: true })
+  errors: string[];
 }
 
-export class ErrorResponseDto {
+export class BulkUploadErrorDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ErrorItemDto)
-  errors: ErrorItemDto[];
+  @Type(() => BulkUploadError)
+  errors: BulkUploadError[];
 }

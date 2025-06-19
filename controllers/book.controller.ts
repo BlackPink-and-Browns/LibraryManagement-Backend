@@ -4,18 +4,14 @@ import BookService from "../services/book.service";
 import { Request, Response, Router, NextFunction } from "express";
 import { CreateBookDTO } from "../dto/books/create-book.dto";
 import { validate } from "class-validator";
-import { authorService } from "../routes/author.route";
-import { Author } from "../entities/author.entity";
-import { Genre } from "../entities/genre.entity";
 import { UpdateBookDTO } from "../dto/books/update-book.dto";
 import { Book } from "../entities/book.entity";
 
 import multer from "multer";
 import { EmployeeRole } from "../entities/enums";
 import { checkRole } from "../middlewares/authorization.middleware";
+import { BulkUploadErrorDto } from "../dto/bulkupload/create-bulkupload.dto";
 
-import { genreService } from "../routes/genre.route";
-import { ErrorResponseDto } from "../dto/bulkupload/create-bulkupload.dto";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -125,27 +121,28 @@ class BookController {
                 );
             }
 
-            const result = await this.bookService.bulkUploadBooks(
-                req.file.buffer,
-                req.user?.id
-            );
-            return res.status(200).send(result);
-        } catch (error) {
-            console.log(error);
-            next(error);
-        }
+      const result = await this.bookService.bulkUploadBooks(req.file.buffer, req.user?.id);
+      return res.status(200).send(result);
+    } catch (error) {
+      console.log(error);
+      next(error);
     }
-    async createBookBulkErrorSheet(
-        req: Request<{}, {}, ErrorResponseDto>,
-        res: Response,
-        next: NextFunction
-    ) {
-        try {
-            const { errors } = req.body;
+  }
+  async createBookBulkErrorSheet(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const { errors } = req.body;
 
-            const fileBuffer = await this.bookService.generateErrorSheet(
-                errors
-            );
+      const errorRequestDto = plainToInstance(BulkUploadErrorDto, req.body);
+      const requestErrors = await validate(errorRequestDto);
+      if (requestErrors.length > 0) {
+        throw new httpException(400, JSON.stringify(requestErrors));
+      }
+
+      const fileBuffer = await this.bookService.generateErrorSheet(errorRequestDto.errors);
 
             res.setHeader(
                 "Content-Disposition",
