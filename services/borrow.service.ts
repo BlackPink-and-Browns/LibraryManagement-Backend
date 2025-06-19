@@ -289,91 +289,95 @@ class BorrowService {
     return overdues;
   }
 
-async checkAndReturnOverdues(
-  employeeId: number,
-  user_id?: number
-): Promise<{ result: BorrowRecord[]; count: number }> {
-  const employee = await this.employeeRepo.findOneByID(employeeId);
-  if (!employee) {
-    throw new httpException(404, "Employee not found");
-  }
-
-  // Step 1: Fetch all borrowed books (with book details)
-  const borrowedRecords = await this.borrowRepo.findBorrowedBooksByEmployee(employeeId);
-
-  const now = new Date();
-  const toUpdate: BorrowRecord[] = [];
-
-  // Step 2: Check for overdue records and update them
-  for (const record of borrowedRecords) {
-    const expiresAt = record.expires_at;
-    if (
-      expiresAt &&
-      now > expiresAt &&
-      record.status !== BorrowStatus.OVERDUE
-    ) {
-      record.status = BorrowStatus.OVERDUE;
-      record.overdue_alert_sent = true;
-      toUpdate.push(record);
-
-      await this.entityManager.transaction(async (manager) => {
-        const m = manager.getRepository(BorrowRecord);
-
-        await m.save({
-          id: record.id,
-          status: BorrowStatus.OVERDUE,
-          overdue_alert_sent: true,
-        });
-
-        const bookTitle =
-          record.bookCopy?.book?.title || `Book #${record.bookCopy?.id}`;
-        const notification = new Notification();
-        notification.employee = employee;
-        notification.message = `The book "${bookTitle}" is overdue. Please return it as soon as possible.`;
-        notification.type = NotificationType.BOOK_OVERDUE;
-        notification.read = false;
-
-        const notifRepo = manager.getRepository(Notification);
-        const savedNotif = await notifRepo.save(notification);
-
-        const borrowLog = await auditLogService.createAuditLog(
-          AuditLogType.UPDATE,
-          user_id,
-          record.id.toString(),
-          EntityType.BORROW_RECORD,
-          manager
-        );
-        if (borrowLog.error) throw borrowLog.error;
-
-        const notifLog = await auditLogService.createAuditLog(
-          AuditLogType.CREATE,
-          user_id,
-          savedNotif.id.toString(),
-          EntityType.NOTIFICATION,
-          manager
-        );
-        if (notifLog.error) throw notifLog.error;
-
-        this.logger.info(
-          `Borrow ${record.id} marked as OVERDUE and notification ${savedNotif.id} created`
-        );
-      });
+  async checkAndReturnOverdues(
+    employeeId: number,
+    user_id?: number
+  ): Promise<{ result: BorrowRecord[]; count: number }> {
+    const employee = await this.employeeRepo.findOneByID(employeeId);
+    if (!employee) {
+      throw new httpException(404, "Employee not found");
     }
+
+    // Step 1: Fetch all borrowed books (with book details)
+    const borrowedRecords = await this.borrowRepo.findBorrowedBooksByEmployee(
+      employeeId
+    );
+
+    const now = new Date();
+    const toUpdate: BorrowRecord[] = [];
+
+    // Step 2: Check for overdue records and update them
+    for (const record of borrowedRecords) {
+      const expiresAt = record.expires_at;
+      if (
+        expiresAt &&
+        now > expiresAt &&
+        record.status !== BorrowStatus.OVERDUE
+      ) {
+        record.status = BorrowStatus.OVERDUE;
+        record.overdue_alert_sent = true;
+        toUpdate.push(record);
+
+        await this.entityManager.transaction(async (manager) => {
+          const m = manager.getRepository(BorrowRecord);
+
+          await m.save({
+            id: record.id,
+            status: BorrowStatus.OVERDUE,
+            overdue_alert_sent: true,
+          });
+
+          const bookTitle =
+            record.bookCopy?.book?.title || `Book #${record.bookCopy?.id}`;
+          const notification = new Notification();
+          notification.employee = employee;
+          notification.message = `The book "${bookTitle}" is overdue. Please return it as soon as possible.`;
+          notification.type = NotificationType.BOOK_OVERDUE;
+          notification.read = false;
+
+          const notifRepo = manager.getRepository(Notification);
+          const savedNotif = await notifRepo.save(notification);
+
+          const borrowLog = await auditLogService.createAuditLog(
+            AuditLogType.UPDATE,
+            user_id,
+            record.id.toString(),
+            EntityType.BORROW_RECORD,
+            manager
+          );
+          if (borrowLog.error) throw borrowLog.error;
+
+          const notifLog = await auditLogService.createAuditLog(
+            AuditLogType.CREATE,
+            user_id,
+            savedNotif.id.toString(),
+            EntityType.NOTIFICATION,
+            manager
+          );
+          if (notifLog.error) throw notifLog.error;
+
+          this.logger.info(
+            `Borrow ${record.id} marked as OVERDUE and notification ${savedNotif.id} created`
+          );
+        });
+      }
+    }
+
+    // Step 3: Fetch updated overdue records after marking them
+    const overdueRecords = await this.borrowRepo.findByStatusAndUser(
+      employeeId,
+      BorrowStatus.OVERDUE
+    );
+
+    this.logger.info(
+      `Found ${overdueRecords.count} overdue borrow records for employee ${employeeId}`
+    );
+
+    return {
+      result: overdueRecords.records,
+      count: overdueRecords.count,
+    };
   }
-
-  // Step 3: Fetch updated overdue records after marking them
-  const overdueRecords = await this.borrowRepo.findByStatusAndUser(employeeId, BorrowStatus.OVERDUE);
-
-  this.logger.info(
-    `Found ${overdueRecords.count} overdue borrow records for employee ${employeeId}`
-  );
-
-  return {
-    result: overdueRecords.records,
-    count: overdueRecords.count,
-  };
-}
-
 
   async getBorrowsByStatus(
     userId: number,
@@ -395,6 +399,12 @@ async checkAndReturnOverdues(
     );
 
     return { records, count };
+  }
+
+  async getBorrowsByStatusForAllUsers(
+    status: BorrowStatus
+  ): Promise<BorrowRecord[]> {
+    return await this.borrowRepo.findAllByStatus(status);
   }
 }
 

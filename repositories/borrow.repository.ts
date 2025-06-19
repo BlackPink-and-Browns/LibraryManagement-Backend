@@ -32,7 +32,7 @@ class BorrowRecordRepository {
       },
       relations: {
         bookCopy: {
-          book:true
+          book: true,
         },
         borrowedBy: true,
         returnShelf: true,
@@ -107,23 +107,23 @@ class BorrowRecordRepository {
         borrowedBy: { id: employeeId },
         status: BorrowStatus.BORROWED,
       },
-       select: {
+      select: {
         id: true,
         borrowed_at: true,
-        expires_at:true,
+        expires_at: true,
         status: true,
-        returned_at:true,
-        returnShelf:true,
-        borrowedBy:true,
+        returned_at: true,
+        returnShelf: true,
+        borrowedBy: true,
         bookCopy: {
-          id: true,         
+          id: true,
           book: {
             title: true,
-            isbn:true,
-            authors:true,
-            avg_rating:true,
-            cover_image:true,
-            description:true
+            isbn: true,
+            authors: true,
+            avg_rating: true,
+            cover_image: true,
+            description: true,
           },
         },
       },
@@ -138,7 +138,7 @@ class BorrowRecordRepository {
   async findBorrowRecordsByBookId(book_id: number): Promise<BorrowRecord[]> {
     return this.repository.find({
       where: {
-        bookCopy: { book: {id: book_id} },
+        bookCopy: { book: { id: book_id } },
         status: BorrowStatus.BORROWED,
       },
       relations: {
@@ -164,7 +164,7 @@ class BorrowRecordRepository {
   async findByStatusAndUser(
     userId: number,
     status: BorrowStatus
-  ): Promise<{records:BorrowRecord[];count:number}> {
+  ): Promise<{ records: BorrowRecord[]; count: number }> {
     const [records, totalCount] = await this.repository.findAndCount({
       where: {
         borrowedBy: { id: userId },
@@ -207,26 +207,53 @@ class BorrowRecordRepository {
     };
   }
 
-  async findCountByStatus({status, previousCount = false}: {status: BorrowStatus, previousCount?: boolean}) {
-    const countByStatus = await this.repository.count({ where: { status: status } })
+  async findCountByStatus({
+    status,
+    previousCount = false,
+  }: {
+    status: BorrowStatus;
+    previousCount?: boolean;
+  }) {
+    const countByStatus = await this.repository.count({
+      where: { status: status },
+    });
     if (previousCount) {
-        const now = new Date();
-        const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const now = new Date();
+      const startOfCurrentMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      );
 
-        const previousMonthCount = await this.repository.count({
-            where: {
-            status: status,
-            createdAt: LessThan(startOfCurrentMonth),
-            },
-        });
-        return {
-            countByStatus,
-            previousMonthCount,
-        };
+      const previousMonthCount = await this.repository.count({
+        where: {
+          status: status,
+          createdAt: LessThan(startOfCurrentMonth),
+        },
+      });
+      return {
+        countByStatus,
+        previousMonthCount,
+      };
     }
-    return {countByStatus}
+    return { countByStatus };
   }
 
+  async findAllByStatus(status: BorrowStatus): Promise<BorrowRecord[]> {
+    return this.repository.find({
+      where: { status },
+      relations: {
+        bookCopy: {
+          book: true,
+        },
+        borrowedBy: true,
+        returnShelf: true,
+      },
+      order: {
+        borrowed_at: "DESC",
+      },
+    });
+  }
 }
 
 export default BorrowRecordRepository;
