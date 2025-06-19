@@ -19,7 +19,7 @@ class AnalyticsService {
 
 async getDashboardSummary(){
   const booksCount = await this.bookRepository.totalCount({previousCount: true});
-  const activeUsersCount = 0;
+  const activeUsersCount = await this.auditLogRepository.countActiveUsers({previousCount: true});
   const shelvesCount = await this.shelfRepository.totalCount({previousCount: true});
   const issuedBooksCount = await this.borrowRepository.findCountByStatus({status: BorrowStatus.BORROWED, previousCount: true});
   const recentActivity = await this.auditLogRepository.findAll( undefined, undefined, 5 );
