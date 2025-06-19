@@ -73,6 +73,7 @@ class EmployeeRepository {
                 name: true,
                 // borrowRecords:true,
                 borrowRecords: {
+                    id:true,
                     createdAt: true,
                     expires_at: true,
                     returned_at:true,
