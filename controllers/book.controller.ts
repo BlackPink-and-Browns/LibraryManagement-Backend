@@ -22,6 +22,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 class BookController {
   constructor(private bookService: BookService, router: Router) {
     router.get("/", this.getAllBooks.bind(this));
+    router.get("/popular", this.getTrendingBooks.bind(this));
     router.get(
       "/bulk",
       checkRole([EmployeeRole.ADMIN]),
@@ -220,7 +221,17 @@ class BookController {
       console.log(error);
       next(error);
     }
-  }
+}
+
+    async getTrendingBooks(req: Request, res: Response, next: NextFunction) {
+        try {
+            const books = await this.bookService.getTrendingBooks();
+            res.status(200).json(books);
+        } catch (error) {
+            console.log(error);
+            next(error);
+        }
+    }
 }
 
 export default BookController;
