@@ -116,7 +116,7 @@ class BorrowRecordRepository {
         returnShelf:true,
         borrowedBy:true,
         bookCopy: {
-          id: true,
+          id: true,         
           book: {
             title: true,
             isbn:true,
