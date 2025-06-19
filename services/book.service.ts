@@ -245,7 +245,7 @@ class BookService {
     return Buffer.from(buffer);
   }
 
-  async bulkUploadBooks(fileBuffer: Buffer) {
+  async bulkUploadBooks(fileBuffer: Buffer, user_id: number) {
     const result: BookUploadResult = {
       totalRows: 0,
       successCount: 0,
@@ -381,29 +381,47 @@ class BookService {
           const missingLabels = uniqueLabels.filter((label) => !foundLabels.includes(label));
           throw new Error(`Shelves not found: ${missingLabels.join(", ")}`);
         }
+        await this.entityManager.transaction(async (manager) => {
+          const bookRepo = manager.getRepository(Book);
 
-        const newBook = new Book();
-        newBook.isbn = bookData.isbn;
-        newBook.title = bookData.title;
-        newBook.description = bookData.description;
-        newBook.cover_image = bookData.cover_image;
-        newBook.authors = authors;
-        newBook.genres = genres;
+          const newBook = new Book();
+          newBook.isbn = bookData.isbn;
+          newBook.title = bookData.title;
+          newBook.description = bookData.description;
+          newBook.cover_image = bookData.cover_image;
+          newBook.authors = authors;
+          newBook.genres = genres;
 
-        const book = await this.bookRepository.create(newBook);
+        // const book = await this.bookRepository.create(newBook);
+
+        const savedBook = await bookRepo.save(newBook);
+           
+          const error = await auditLogService.createAuditLog(
+            AuditLogType.CREATE,
+            user_id,
+            savedBook.id.toString(),
+            EntityType.BOOK,
+            manager
+          );
+
+          if (error.error) {
+            throw error.error;
+          }
 
         const copies: BookCopy[] = [];
         for (const shelf of shelves) {
           const count = shelfLabelCounts[shelf.label];
           for (let i = 0; i < count; i++) {
             const copy = new BookCopy();
-            copy.book = book;
+            copy.book = savedBook;
             copy.shelf = shelf;
             copy.is_available = true;
             copies.push(copy);
           }
         }
         await this.bookCopyRepository.createMultiple(copies);
+      });
+
         result.successCount++;
       } catch (error) {
         result.errors.push({
@@ -434,9 +452,8 @@ class BookService {
   }
 
   async getTrendingBooks() {
-      return this.bookRepository.findPopular(8, true)
-    }
-
+    return this.bookRepository.findPopular(8, true);
+  }
 }
 
 export default BookService;
