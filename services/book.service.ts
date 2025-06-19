@@ -394,6 +394,10 @@ class BookService {
     return Buffer.from(buffer);
     }
 
+    async getTrendingBooks() {
+      return this.bookRepository.findPopular(8, true)
+    }
+
 }
 
 export default BookService;
