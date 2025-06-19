@@ -99,6 +99,10 @@ class ShelfRepository {
       return {totalCount}
   }
 
+  async list(): Promise<Shelf[]> {
+      return await this.repository.find({select: {label: true }})
+    }
+
 }
 
 export default ShelfRepository;

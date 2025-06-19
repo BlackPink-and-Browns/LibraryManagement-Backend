@@ -19,6 +19,7 @@ import { CellValue, Workbook } from "exceljs";
 import setupWorksheet from "../utils/setupWorksheet";
 import { parseItems } from "../utils/bulkUpload";
 import { ErrorItemDto } from "../dto/bulkupload/create-bulkupload.dto";
+import ShelfRepository from "../repositories/shelf.repository";
 
 interface BookUploadResult {
   totalRows: number;
@@ -48,7 +49,8 @@ class BookService {
   constructor(
     private bookRepository: BookRepository,
     private authorRepository: AuthorRepository,
-    private genreRepository: GenreRepository
+    private genreRepository: GenreRepository,
+    private shelfRepository: ShelfRepository,
   ) {}
 
   async createBook(
@@ -200,6 +202,7 @@ class BookService {
   async createBookBulkTemplate(): Promise<Buffer> {
     const authors = await this.authorRepository.list();
     const genres = await this.genreRepository.list();
+    const shelfLabels = await this.shelfRepository.list();
 
     const workbook = new Workbook();
 
@@ -212,22 +215,24 @@ class BookService {
         "Cover Image URL",
         "Authors (comma-separated)",
         "Genres (comma-separated)",
+        "Shelf Labels (comma-separated)\nRepeat the label multiple times if multiple copies are to be placed on the same shelf"
       ],
-      columnWidths: [15, 30, 40, 40, 50, 50],
+      columnWidths: [15, 30, 30, 30, 50, 50, 60],
     });
 
     const dataSheet = setupWorksheet(workbook, {
       name: "Data Definitions",
-      headers: ["Author Name", "Genre Name"],
-      columnWidths: [30, 30],
+      headers: ["Author Name", "Genre Name", "Shelf Labels"],
+      columnWidths: [30, 30, 30],
     });
 
-    const maxRows = Math.max(authors.length, genres.length);
+    const maxRows = Math.max(authors.length, genres.length, shelfLabels.length);
     const rows = [];
     for (let i = 0; i < maxRows; i++) {
       rows.push([
         i < authors.length ? authors[i].name : "",
         i < genres.length ? genres[i].name : "",
+        i < shelfLabels.length ? shelfLabels[i].label : "",
       ]);
     }
     dataSheet.addRows(rows);
