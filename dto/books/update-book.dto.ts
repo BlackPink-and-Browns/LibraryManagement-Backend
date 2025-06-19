@@ -13,7 +13,6 @@ export class UpdateBookDTO {
 
     @IsOptional()
     isbn: string;
-
     @IsOptional()
     title: string;
     @IsOptional()

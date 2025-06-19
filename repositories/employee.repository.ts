@@ -84,7 +84,11 @@ class EmployeeRepository {
                             title: true,
                             cover_image: true,
                             is_available: true,
-                            avg_rating: true
+                            avg_rating: true,
+                            authors: {
+                                id: true,
+                                name: true
+                            }
                         }
                     }
                 },
@@ -97,7 +101,9 @@ class EmployeeRepository {
                 borrowRecords: {
                     bookCopy:{
                         shelf:true,
-                        book:true
+                        book:{
+                            authors:true
+                        }
                     }
                 },
                 waitlistEntries: true,
