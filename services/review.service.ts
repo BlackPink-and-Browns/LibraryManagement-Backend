@@ -83,6 +83,7 @@ class ReviewService {
         review.content = createDto.content;
         review.book = book;
         review.employee = employee;
+        book.avg_rating = Number(((book.avg_rating + review.rating)/ (book.reviews.length + 1)).toFixed(1))
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(Review);
             const createdReview = await m.save(review);

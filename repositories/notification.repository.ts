@@ -8,6 +8,10 @@ class NotificationRepository {
     return this.repository.save(notification);
   }
 
+  async createMany(notifications: Notification[]) : Promise<Notification[]> {
+    return this.repository.save(notifications)
+  }
+
   async findAllByEmployeeId(employee_id: number, read: boolean | "") {
       const whereClause: { employeeId: number; read?: boolean } = {
         employeeId: employee_id,

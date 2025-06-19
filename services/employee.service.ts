@@ -1,5 +1,5 @@
 import { InsertResult } from "typeorm";
-import { EmployeeRole, EmployeeStatus } from "../entities/enums";
+import { AuditLogType, EmployeeRole, EmployeeStatus, EntityType } from "../entities/enums";
 import Employee from "../entities/employee.entity";
 import EmployeeRepository from "../repositories/employee.repository";
 import Address from "../entities/address.entity";
@@ -103,16 +103,16 @@ class EmployeeService {
 
         const createdEmplooyee = await this.employeeRepository.create(e);
         auditLogService.createAuditLog(
-            "CREATE",
+            AuditLogType.CREATE,
             user_id,
             createdEmplooyee.id.toString(),
-            "EMPLOYEE"
+            EntityType.EMPLOYEE
         );
         auditLogService.createAuditLog(
-            "CREATE",
+            AuditLogType.CREATE,
             user_id,
             createdEmplooyee.address.id.toString(),
-            "ADDRESS"
+            EntityType.ADDRESS
         );
         this.logger.info("employee created");
         return createdEmplooyee;
@@ -126,10 +126,10 @@ class EmployeeService {
             throw new httpException(400, "Employee not found");
         }
         auditLogService.createAuditLog(
-            "DELETE",
+            AuditLogType.DELETE,
             user_id,
             id.toString(),
-            "EMPLOYEE"
+            EntityType.EMPLOYEE
         );
         await this.employeeRepository.remove(e);
     }
@@ -176,10 +176,10 @@ class EmployeeService {
         existingEmployee.department = dep;
         await this.employeeRepository.update(id, existingEmployee);
         auditLogService.createAuditLog(
-            "UPDATE",
+            AuditLogType.UPDATE,
             user_id,
             id.toString(),
-            "EMPLOYEE"
+            EntityType.EMPLOYEE
         );
         this.logger.info("employee updated");
     }

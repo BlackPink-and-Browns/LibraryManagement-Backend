@@ -4,9 +4,13 @@ import { auditLogService } from "../routes/audit.route";
 import WaitlistRepository from "../repositories/waitlist.repository";
 import { Waitlist } from "../entities/waitlist.entity";
 import BookRepository from "../repositories/book.repository";
-import { EntityType, WaitlistStatus } from "../entities/enums";
+import { AuditLogType, EntityType, WaitlistStatus } from "../entities/enums";
 import { Notification } from "../entities/notification.entity";
 import datasource from "../db/data-source";
+import BorrowRecordRepository from "../repositories/borrow.repository";
+import { borrowRepository, borrowService } from "../routes/borrow.route";
+import Employee from "../entities/employee.entity";
+import { notificationService } from "../routes/notification.route";
 
 class WaitlistService {
     private entityManager = datasource.manager;
@@ -27,12 +31,23 @@ class WaitlistService {
             user_id,
             book
         );
+        const borrowRecords = await borrowRepository.findBorrowRecordsByBookId(
+            book.id
+        );
+        const usersWithBook: number[] = borrowRecords.map((borrowRecord) => {
+            return borrowRecord.borrowedBy.id;
+        });
         if (existingWaitlist) {
             existingWaitlist.status = WaitlistStatus.REQUESTED;
             await this.waitlistRepository.updateSelectedItems(
                 user_id,
                 [existingWaitlist.id],
                 WaitlistStatus.REQUESTED
+            );
+            const message = `A user has requested for the book - ${book.title}`;
+            await notificationService.createMultpleRequestNotifications(
+                usersWithBook,
+                message
             );
             this.logger.info("waitlist updated - changed REMOVED to REQUESTED");
         } else {
@@ -41,15 +56,19 @@ class WaitlistService {
             newWaitListEntry.employeeId = user_id;
             newWaitListEntry.status = WaitlistStatus.REQUESTED;
 
+            const message = `A user has requested for the book - ${book.title}`;
+            await notificationService.createMultpleRequestNotifications(
+                usersWithBook,
+                message
+            );
             // const newNotification = new Notification();
             // newNotification.message = `A new user has requested for the book - ${book.title}`;
             // newNotification.type =
             return await this.entityManager.transaction(async (manager) => {
-              const m = manager.getRepository(Waitlist)
-                const createdWaitListEntry =
-                    m.save(newWaitListEntry);
+                const m = manager.getRepository(Waitlist);
+                const createdWaitListEntry = m.save(newWaitListEntry);
                 const error = await auditLogService.createAuditLog(
-                    "CREATE",
+                    AuditLogType.CREATE,
                     user_id,
                     (await createdWaitListEntry).id.toString(),
                     EntityType.WAITLIST,

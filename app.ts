@@ -32,13 +32,13 @@ server.use(loggerMiddleware);
 server.use(processTimeMiddleware);
 server.use(cors())
 server.use("/employees",authMiddleware, employeeRouter);
-server.use("/department",authMiddleware,departmentRouter);
+server.use("/departments",authMiddleware,departmentRouter);
 server.use("/books",authMiddleware,bookRouter,bookCopyRouter)
 server.use("/reviews",authMiddleware,reviewRouter);
 server.use("/shelves",authMiddleware,shelfRouter)
 server.use("/audits",authMiddleware,auditLogRouter)
 server.use("/auth", authRouter);
-server.use("/author", authMiddleware, authorRouter);
+server.use("/authors", authMiddleware, authorRouter);
 server.use("/requests/books", authMiddleware, waitlistRouter);
 server.use("/borrows",authMiddleware,borrowRouter);
 server.use("/notifications", authMiddleware, notificationRouter);

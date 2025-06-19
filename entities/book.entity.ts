@@ -63,9 +63,9 @@ export class Book extends AbstractEntity {
   @OneToMany(() => Review, (review) => review.book)
   reviews: Review[];
 
-  @Column({ nullable: true })
+  @Column({ default:false })
   is_available: boolean
 
-  @Column({ nullable: true })
+  @Column({ default:0})
   avg_rating: number
 }
