@@ -82,10 +82,7 @@ class BookRepository {
                 },
                 copies: {
                     id: true,
-                    shelf: {
-                        label: true,
-                        office: true,
-                    },
+                    shelf:true,
                     is_available:true
                 },
                 reviews: {
@@ -101,7 +98,11 @@ class BookRepository {
             relations: {
                 authors: true,
                 genres: true,
-                copies: true,
+                copies: {
+                    shelf:{
+                        office:true
+                    }
+                },
                 reviews: true,
             },
         });
