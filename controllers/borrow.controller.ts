@@ -102,7 +102,7 @@ class BorrowController {
 
       res.status(200).json({
         message: `Checked overdue books for employee ${employeeId}`,
-        books: result,
+        overdued_books: result,
         count,
       });
     } catch (error) {
