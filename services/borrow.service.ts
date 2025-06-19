@@ -309,7 +309,7 @@ async checkAndReturnOverdues(
     const expiresAt = record.expires_at;
     if (
       expiresAt &&
-      now < expiresAt &&
+      now > expiresAt &&
       record.status !== BorrowStatus.OVERDUE
     ) {
       record.status = BorrowStatus.OVERDUE;
