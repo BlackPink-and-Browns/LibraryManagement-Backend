@@ -65,15 +65,17 @@ class EmployeeRepository {
         id: number
     ): Promise<EmployeeLibraryResponseDto> {
         const response = new EmployeeLibraryResponseDto();
-        const e = await this.repository.findOne({
-            where: { id },
+        let emp = await this.repository.find({
+            where: { id:id },
             select: {
                 id: true,
                 email: true,
                 name: true,
+                // borrowRecords:true,
                 borrowRecords: {
                     createdAt: true,
                     expires_at: true,
+                    returned_at:true,
                     status: true,
                     bookCopy:{
                         id: true,
@@ -110,6 +112,7 @@ class EmployeeRepository {
                 notifications: true,
             },
         });
+        const e = emp[0]
         let unread_notifications = 0;
         let current_borrowed = 0;
         let current_overdue = 0;
@@ -120,6 +123,7 @@ class EmployeeRepository {
         const overdue_books: BorrowRecord[] = [];
         const book_history: BorrowRecord[] = [];
 
+        console.log(e.borrowRecords)
         e.borrowRecords.forEach((borrowRecord) => {
             book_history.push(borrowRecord);
             if (borrowRecord.status === BorrowStatus.BORROWED) {
