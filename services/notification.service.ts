@@ -8,7 +8,7 @@ import { error } from "winston";
 import { auditLogService } from "../routes/audit.route";
 
 class NotificationService {
-  private logger = LoggerService.getInstance(NotificationService.name);
+    private logger = LoggerService.getInstance(NotificationService.name);
 
   constructor(private notificationRepository: NotificationRepository) {}
 
@@ -24,16 +24,35 @@ class NotificationService {
     return waitlists;
   }
 
-  async updateNotification(
-    user_id: number,
-    notificationId: number
-  ): Promise<void> {
-    await this.notificationRepository.updateSelectedItem(
-      user_id,
-      notificationId
-    );
-    this.logger.info(`set notification to read`);
-  }
+    async updateNotification(
+        user_id: number,
+        notificationId: number
+    ): Promise<void> {
+        await this.notificationRepository.updateSelectedItem(
+            user_id,
+            notificationId
+        );
+        this.logger.info(`set notification to read`);
+    }
+
+    async createMultpleRequestNotifications(
+        user_ids: number[],
+        message: string,
+    ): Promise<void> {
+        const notifications: Notification[] = []
+        user_ids.forEach(id => {
+            const notification = new Notification()
+            notification.employeeId = id
+            notification.message = message,
+            notification.read = false,
+            notification.type = NotificationType.BOOK_REQUEST
+            notifications.push(notification)
+        });
+            
+
+        await this.notificationRepository.createMany(notifications);
+    }
+
 
   async createNotification(createNotificationDTO: CreateNotificationDTO, manager: EntityManager){
     try {

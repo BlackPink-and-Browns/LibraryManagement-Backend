@@ -27,16 +27,16 @@ export class EmployeeLibraryResponseDto {
     current_borrowed: number
 
     @IsNotEmpty()
-    borrowed_books: BookCopy[]
+    borrowed_books: BorrowRecord[]
 
     @IsNotEmpty()
     current_overdue: number
 
     @IsNotEmpty()
-    overdue_books: BookCopy[]
+    overdue_books: BorrowRecord[]
 
     @IsNotEmpty()
-    book_history: BookCopy[]
+    book_history: BorrowRecord[]
 
     @IsNotEmpty()
     current_waitlist: number
