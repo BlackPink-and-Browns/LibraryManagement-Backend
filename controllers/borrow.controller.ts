@@ -14,7 +14,7 @@ class BorrowController {
     router.patch("/update_status/:borrow_id", this.reborrowBook.bind(this));
     router.get("/overdue/alerts", this.getOverdueAlerts.bind(this));
     router.get(
-      "/overdue/check/:employeeId",
+      "/overdue/check/",
       this.checkAndReturnOverdues.bind(this)
     );
     router.get("/books", this.getBorrowListByStatus.bind(this));
@@ -90,11 +90,11 @@ class BorrowController {
     next: NextFunction
   ) {
     try {
-      const employeeId = parseInt(req.params.employeeId);
-      if (isNaN(employeeId)) {
-        throw new Error("Invalid employee ID");
-      }
-
+      // const employeeId = parseInt(req.params.employeeId);
+      // if (isNaN(employeeId)) {
+      //   throw new Error("Invalid employee ID");
+      // }
+      const employeeId=req.user.id;
       const { result, count } = await this.borrowService.checkAndReturnOverdues(
         employeeId,
         employeeId
