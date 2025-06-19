@@ -43,18 +43,45 @@ class AuditLogRepository {
     });
   }
 
-  async countActiveUsers({previousCount = false}: {previousCount?: boolean}) {
+  async countActiveUsers({ previousCount = false }: { previousCount?: boolean }) {
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    const countUniqueEmployeesCurrentMonth = await this.repository
-            .createQueryBuilder('audit_log')
-            .select('COUNT(DISTINCT audit.employeeId)', 'count')
-            .where('audit.action = :action', { action: 'CREATE' })
-            .andWhere('audit.entityType IN (:...entities)', {
-              entities: [EntityType.BORROW_RECORD, EntityType.WAITLIST],
-            })
-            .getRawOne();
+    const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfPreviousMonth = new Date(startOfCurrentMonth);
+
+    const baseQuery = this.repository
+      .createQueryBuilder('audit')
+      .select('COUNT(DISTINCT audit.employeeId)', 'count')
+      .where('audit.action = :action', { action: 'CREATE' })
+      .andWhere('audit.entityType IN (:...entities)', {
+        entities: [EntityType.BORROW_RECORD, EntityType.WAITLIST],
+      });
+    const result: {
+      currentMonthCount?: number;
+      previousMonthCount?: number;
+    } = {};
+    const currentMonthQuery = baseQuery
+      .clone()
+      .andWhere('audit.createdAt >= :startOfCurrentMonth', {
+        startOfCurrentMonth,
+      });
+
+    const current = await currentMonthQuery.getRawOne();
+    result.currentMonthCount = parseInt(current.count, 10);
+
+    if (previousCount) {
+      const previousMonthQuery = baseQuery
+        .clone()
+        .andWhere('audit.createdAt >= :startOfPreviousMonth', {
+          startOfPreviousMonth,
+        })
+        .andWhere('audit.createdAt < :endOfPreviousMonth', {
+          endOfPreviousMonth,
+        });
+      const previous = await previousMonthQuery.getRawOne();
+      result.previousMonthCount = parseInt(previous.count, 10);
+    }
+    return result;
   }
 }
 
