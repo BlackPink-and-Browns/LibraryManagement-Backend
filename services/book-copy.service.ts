@@ -6,7 +6,7 @@ import httpException from "../exceptions/http.exception";
 import BookCopyRepository from "../repositories/book-copies.repository";
 import { auditLogService } from "../routes/audit.route";
 import { bookService } from "../routes/book.route";
-import { shelfService } from "../routes/shelf.route";
+import { shelfRepository, shelfService } from "../routes/shelf.route";
 import { LoggerService } from "./logger.service";
 
 class BookCopyService {
@@ -17,7 +17,9 @@ class BookCopyService {
     async createBookCopy(
         book_id: number,
         count: number,
-        user_id: number
+        user_id: number,
+        shelf_id?:number
+        
     ): Promise<BookCopy[]> {
         const bookCopies: BookCopy[] = []
         for (let i = 0; i < count; i++) {
@@ -29,6 +31,14 @@ class BookCopyService {
             }
             bookCopy.book = book;
             bookCopy.is_available = true;
+            if(shelf_id) {
+                const shelf = await shelfRepository.findOneByID(shelf_id)
+                if(!shelf) {
+                    this.logger.error("Shelf not found")
+                    throw new httpException(400, "Shelf not found")
+                }
+                bookCopy.shelf = shelf
+            }
             await this.entityManager.transaction(async (manager) => {
                 const m = manager.getRepository(BookCopy);
                 const createdBookCopy = await m.save(bookCopy);

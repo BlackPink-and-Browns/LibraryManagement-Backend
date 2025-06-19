@@ -5,6 +5,7 @@ import { borrowRepository, borrowService } from "../routes/borrow.route";
 import { BorrowStatus, WaitlistStatus } from "../entities/enums";
 import { Book } from "../entities/book.entity";
 import { BookCopy } from "../entities/bookcopy.entity";
+import { BorrowRecord } from "../entities/borrowrecord.entity";
 
 class EmployeeRepository {
     constructor(private repository: Repository<Employee>) {}
@@ -70,7 +71,23 @@ class EmployeeRepository {
                 id: true,
                 email: true,
                 name: true,
-                borrowRecords: true,
+                borrowRecords: {
+                    createdAt: true,
+                    expires_at: true,
+                    status: true,
+                    bookCopy:{
+                        id: true,
+                        is_available: true,
+                        shelf:true,
+                        book: {
+                            id: true,
+                            title: true,
+                            cover_image: true,
+                            is_available: true,
+                            avg_rating: true
+                        }
+                    }
+                },
                 waitlistEntries: true,
                 notifications: true,
             },
@@ -78,7 +95,10 @@ class EmployeeRepository {
                 address: true,
                 department: true,
                 borrowRecords: {
-                    bookCopy:true
+                    bookCopy:{
+                        shelf:true,
+                        book:true
+                    }
                 },
                 waitlistEntries: true,
                 notifications: true,
@@ -90,19 +110,19 @@ class EmployeeRepository {
         let current_waitlist = 0;
         let total_borrowed = e.borrowRecords.length;
 
-        const borrowed_books: BookCopy[] = [];
-        const overdue_books: BookCopy[] = [];
-        const book_history: BookCopy[] = [];
+        const borrowed_books: BorrowRecord[] = [];
+        const overdue_books: BorrowRecord[] = [];
+        const book_history: BorrowRecord[] = [];
 
         e.borrowRecords.forEach((borrowRecord) => {
-            book_history.push(borrowRecord.bookCopy);
+            book_history.push(borrowRecord);
             if (borrowRecord.status === BorrowStatus.BORROWED) {
                 current_borrowed += 1;
-                borrowed_books.push(borrowRecord.bookCopy);
+                borrowed_books.push(borrowRecord);
             }
             if (borrowRecord.status === BorrowStatus.OVERDUE) {
                 current_overdue += 1;
-                overdue_books.push(borrowRecord.bookCopy);
+                overdue_books.push(borrowRecord);
             }
         });
 

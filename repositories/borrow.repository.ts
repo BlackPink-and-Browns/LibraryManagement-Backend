@@ -107,18 +107,53 @@ class BorrowRecordRepository {
         borrowedBy: { id: employeeId },
         status: BorrowStatus.BORROWED,
       },
+       select: {
+        id: true,
+        borrowed_at: true,
+        expires_at:true,
+        status: true,
+        returned_at:true,
+        returnShelf:true,
+        borrowedBy:true,
+        bookCopy: {
+          id: true,         
+          book: {
+            title: true,
+            isbn:true,
+            authors:true,
+            avg_rating:true,
+            cover_image:true,
+            description:true
+          },
+        },
+      },
       relations: {
+        bookCopy: {
+          book: true,
+        },
+      },
+    });
+  }
+
+  async findBorrowRecordsByBookId(book_id: number): Promise<BorrowRecord[]> {
+    return this.repository.find({
+      where: {
+        bookCopy: { book: {id: book_id} },
+        status: BorrowStatus.BORROWED,
+      },
+      relations: {
+        // borrowedBy: true,
         bookCopy: {
           book: true,
         },
       },
       select: {
         id: true,
-        borrowed_at: true,
         status: true,
         bookCopy: {
           id: true,
           book: {
+            id: true,
             title: true,
           },
         },

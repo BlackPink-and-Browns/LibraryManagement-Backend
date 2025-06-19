@@ -12,6 +12,7 @@ import EmployeeRepository from "../repositories/employee.repository";
 import { auditLogService } from "../routes/audit.route";
 import datasource from "../db/data-source";
 import { AuditLogType, EntityType } from "../entities/enums";
+import { bookService } from "../routes/book.route";
 
 class ReviewService {
     private entityManager = datasource.manager;
@@ -83,6 +84,14 @@ class ReviewService {
         review.content = createDto.content;
         review.book = book;
         review.employee = employee;
+        book.avg_rating = Number(
+            (
+                (book.avg_rating + review.rating) /
+                (book.reviews.length + 1)
+            ).toFixed(1)
+        );
+        await this.bookRepository.update(book.id, book);
+
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(Review);
             const createdReview = await m.save(review);
@@ -115,6 +124,20 @@ class ReviewService {
         }
 
         if (updateDto.rating !== undefined) {
+            const book_id = review.book.id;
+            const book = await this.bookRepository.findOneByID(book_id);
+            if (!book) {
+                this.logger.error("Book not found");
+                throw new httpException(404, "Book not found");
+            }
+            const avg_rating =
+                book.avg_rating - review.rating < 0
+                    ? 0 + updateDto.rating
+                    : book.avg_rating - review.rating + updateDto.rating;
+            book.avg_rating = Number(
+                (avg_rating / book.reviews.length).toFixed(1)
+            );
+            await this.bookRepository.update(book.id, book);
             review.rating = updateDto.rating;
         }
 
@@ -124,7 +147,7 @@ class ReviewService {
 
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(Review);
-            const reviewUpdated = await m.save({ id, ...review });
+            await m.save({ id, ...review });
 
             const error = await auditLogService.createAuditLog(
                 AuditLogType.UPDATE,
@@ -148,7 +171,7 @@ class ReviewService {
             throw new httpException(404, "Review not found");
         }
         return await this.entityManager.transaction(async (manager) => {
-          const m = manager.getRepository(Review)
+            const m = manager.getRepository(Review);
             await m.remove(review);
             this.logger.info(`Review ${id} deleted`);
             const error = await auditLogService.createAuditLog(

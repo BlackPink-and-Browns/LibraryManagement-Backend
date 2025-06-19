@@ -112,7 +112,7 @@ class EmployeeService {
             AuditLogType.CREATE,
             user_id,
             createdEmplooyee.address.id.toString(),
-            EntityType.EMPLOYEE
+            EntityType.ADDRESS
         );
         this.logger.info("employee created");
         return createdEmplooyee;
@@ -176,7 +176,7 @@ class EmployeeService {
         existingEmployee.department = dep;
         await this.employeeRepository.update(id, existingEmployee);
         auditLogService.createAuditLog(
-            AuditLogType.CREATE,
+            AuditLogType.UPDATE,
             user_id,
             id.toString(),
             EntityType.EMPLOYEE
