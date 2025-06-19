@@ -20,6 +20,7 @@ class EmployeeController {
     router.get("/", this.getAllEmployees.bind(this));
     router.get("/profile", this.getEmployeeLibraryDetails.bind(this));
     router.get("/profile/:id", this.getBasicEmployeeDetails.bind(this));
+    router.get("/profile/admin/:id",this.getEmployeeLibraryDetails.bind(this))
     router.get("/:id", this.getEmployeeByID.bind(this));
     router.delete("/:id", checkRole([EmployeeRole.HR]), this.deleteEmployee);
     router.put(
