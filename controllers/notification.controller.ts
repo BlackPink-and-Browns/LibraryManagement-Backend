@@ -4,7 +4,10 @@ import NotificationService from "../services/notification.service";
 import { Notification } from "../entities/notification.entity";
 
 class NotificationController {
-  constructor(private notificationService: NotificationService, router: Router) {
+  constructor(
+    private notificationService: NotificationService,
+    router: Router
+  ) {
     router.get("/", this.getAllNotificationsByEmployee.bind(this));
     router.patch("/:id", this.updateNotification.bind(this));
   }
@@ -15,15 +18,15 @@ class NotificationController {
     next: NextFunction
   ) {
     try {
-      const {read} = req.query;
-      const finalRead = read ? read : ''
-      if ( !["true","false"].includes(finalRead) && finalRead != "" ){
-        throw new httpException(400, "Ivalid input for query param 'read'")
-      } 
+      const { read } = req.query;
+      const finalRead = read ? read : "";
+      if (!["true", "false"].includes(finalRead) && finalRead != "") {
+        throw new httpException(400, "Ivalid input for query param 'read'");
+      }
       const notifications: Notification[] =
         await this.notificationService.getAllNoticationByEmployeeId(
-            req.user?.id,
-            finalRead ? finalRead === "true" ? true : false : ''
+          req.user?.id,
+          finalRead ? (finalRead === "true" ? true : false) : ""
         );
       res.status(200).send(notifications);
     } catch (err) {
@@ -34,10 +37,9 @@ class NotificationController {
 
   async updateNotification(req: Request, res: Response, next: NextFunction) {
     try {
-
       await this.notificationService.updateNotification(
-          req.user?.id,
-          Number(req.params.id)
+        req.user?.id,
+        Number(req.params.id)
       );
 
       res.status(200).send();
@@ -46,7 +48,6 @@ class NotificationController {
       next(err);
     }
   }
-
 }
 
 export default NotificationController;
