@@ -13,7 +13,10 @@ class BorrowController {
     router.patch("/:borrow_id", this.returnBook.bind(this));
     router.patch("/update_status/:borrow_id", this.reborrowBook.bind(this));
     router.get("/overdue/alerts", this.getOverdueAlerts.bind(this));
-    router.post("/overdue/check/:employeeId",this.checkAndNotifyOverdues.bind(this));
+    router.get(
+      "/overdue/check/",
+      this.checkAndReturnOverdues.bind(this)
+    );
     router.get("/books", this.getBorrowListByStatus.bind(this));
   }
 
@@ -36,28 +39,27 @@ class BorrowController {
   }
 
   async returnBook(req: Request, res: Response, next: NextFunction) {
-  try {
-    const returnDto = plainToInstance(ReturnBorrowDto, req.body);
-    const errors = await validate(returnDto);
-    if (errors.length > 0) {
-      throw new httpException(400, JSON.stringify(errors));
+    try {
+      const returnDto = plainToInstance(ReturnBorrowDto, req.body);
+      const errors = await validate(returnDto);
+      if (errors.length > 0) {
+        throw new httpException(400, JSON.stringify(errors));
+      }
+
+      const borrowId = req.params.borrow_id;
+      const returnShelfId = returnDto.returned_shelf_no;
+
+      const updatedRecord = await this.borrowService.returnBook(
+        borrowId,
+        returnShelfId,
+        req.user?.id
+      );
+
+      res.status(200).send(updatedRecord);
+    } catch (err) {
+      next(err);
     }
-
-    const borrowId = req.params.borrow_id;
-    const returnShelfId = returnDto.returned_shelf_no;
-
-    const updatedRecord = await this.borrowService.returnBook(
-      borrowId,
-      returnShelfId,
-      req.user?.id
-    );
-
-    res.status(200).send(updatedRecord);
-  } catch (err) {
-    next(err);
   }
-}
-
 
   async getOverdueAlerts(req: Request, res: Response, next: NextFunction) {
     try {
@@ -69,54 +71,67 @@ class BorrowController {
   }
 
   async reborrowBook(req: Request, res: Response, next: NextFunction) {
-  try {
-    const id = Number(req.params.borrow_id);
-    const result = await this.borrowService.reborrowOverdueBook(id, req.user?.id);
-    res.status(200).send(result);
-  } catch (err) {
-    next(err);
-  }
-}
-
- // POST /books/overdue/check/:employeeId
-  async checkAndNotifyOverdues(req: Request, res: Response, next: NextFunction) {
     try {
-      const employeeId = parseInt(req.params.employeeId);
-      if (isNaN(employeeId)) {
-        throw new Error("Invalid employee ID");
-      }
+      const id = Number(req.params.borrow_id);
+      const result = await this.borrowService.reborrowOverdueBook(
+        id,
+        req.user?.id
+      );
+      res.status(200).send(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 
-      const result = await this.borrowService.checkAndNotifyOverdues(employeeId);
+  // POST /books/overdue/check/:employeeId
+  async checkAndReturnOverdues(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      // const employeeId = parseInt(req.params.employeeId);
+      // if (isNaN(employeeId)) {
+      //   throw new Error("Invalid employee ID");
+      // }
+      const employeeId=req.user.id;
+      const { result, count } = await this.borrowService.checkAndReturnOverdues(
+        employeeId,
+        employeeId
+      );
+
       res.status(200).json({
         message: `Checked overdue books for employee ${employeeId}`,
-        count: result.count,
+        books: result,
+        count,
       });
     } catch (error) {
       next(error);
     }
   }
-async getBorrowListByStatus(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { status } = req.query;
-    const userId = req.user?.id;
 
-    if (!status || !userId) {
-      throw new httpException(400, "Status and authenticated user ID required");
+  async getBorrowListByStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { status } = req.query;
+      const userId = req.user?.id;
+
+      if (!status || !userId) {
+        throw new httpException(
+          400,
+          "Status and authenticated user ID required"
+        );
+      }
+
+      const borrows = await this.borrowService.getBorrowsByStatus(
+        userId,
+        status as BorrowStatus
+      );
+
+      res.status(200).send(borrows);
+    } catch (err) {
+      next(err);
     }
-
-    const borrows = await this.borrowService.getBorrowsByStatus(
-      userId,
-      status as BorrowStatus
-    );
-
-    res.status(200).send(borrows);
-  } catch (err) {
-    next(err);
   }
-}
-
-
-
 }
 
 export default BorrowController;

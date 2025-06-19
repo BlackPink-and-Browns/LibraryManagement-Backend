@@ -69,20 +69,22 @@ class WaitlistRepository {
       },
       {
         status: status,
+        notification: true
       }
     );
   }
 
   async findPreviewByID(employeeId: number, book: Book): Promise<Waitlist> {
-    return this.repository.findOne({
-      where: {
-        employeeId: employeeId,
-        book: book,
-      },
-      select: {
-        id: true,
-      },
-    });
+      return this.repository.findOne({
+          where: {
+            employeeId: employeeId,
+            book: book
+          },
+          select: {
+              id: true,
+              status: true,
+          }
+      })
   }
 
   async findByBookAndEmployee(

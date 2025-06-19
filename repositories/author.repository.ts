@@ -30,29 +30,14 @@ class AuthorRepository {
         books: {
           id: true,
           title: true,
-          isbn: true,
           description: true,
           cover_image: true,
-          genres: {
-            id: true,
-            name: true,
-          },
-          reviews: {
-            id: true,
-            rating: true,
-          },
-          copies: {
-            id: true,
-            is_available: true,
-          }
+          avg_rating: true,
+          is_available: true,
         },
       },
       relations: {
-        books: {
-          genres: true,
-          reviews: true,
-          copies: true,
-        },
+        books: true,
       },
     });
   }
@@ -70,14 +55,6 @@ class AuthorRepository {
   async update(id: number, author: Author): Promise<void> {
     await this.repository.save({ id, ...author });
   }
-
-  // async delete (id: number) : Promise<void> {
-  //     await this.repository.delete({id})
-  // }
-
-  // async remove(employee : Employee) : Promise<void> {
-  //     await this.repository.remove(employee)
-  // }
 }
 
 export default AuthorRepository;
