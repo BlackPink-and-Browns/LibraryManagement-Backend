@@ -17,6 +17,7 @@ function setupWorksheet(
   sheet.addRow(config.headers);
   const headerRow = sheet.getRow(1);
   headerRow.font = { bold: true };
+  headerRow.alignment = { vertical: 'middle', wrapText: true };
   headerRow.border = {
     bottom: { style: 'double', color: { argb: '#000000' } },
   };
