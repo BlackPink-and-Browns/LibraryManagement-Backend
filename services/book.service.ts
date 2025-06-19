@@ -18,10 +18,10 @@ import GenreRepository from "../repositories/genre.repository";
 import { CellValue, Workbook } from "exceljs";
 import setupWorksheet from "../utils/setupWorksheet";
 import { parseItems } from "../utils/bulkUpload";
-import { ErrorItemDto } from "../dto/bulkupload/create-bulkupload.dto";
 import ShelfRepository from "../repositories/shelf.repository";
 import { BookCopy } from "../entities/bookcopy.entity";
 import BookCopyRepository from "../repositories/book-copies.repository";
+import { BulkUploadError, BulkUploadErrorDto } from "../dto/bulkupload/create-bulkupload.dto";
 
 interface BookUploadResult {
   totalRows: number;
@@ -392,11 +392,9 @@ class BookService {
           newBook.authors = authors;
           newBook.genres = genres;
 
-        // const book = await this.bookRepository.create(newBook);
+          const savedBook = await bookRepo.save(newBook);
 
-        const savedBook = await bookRepo.save(newBook);
-           
-          const error = await auditLogService.createAuditLog(
+          const auditLog = await auditLogService.createAuditLog(
             AuditLogType.CREATE,
             user_id,
             savedBook.id.toString(),
@@ -404,10 +402,9 @@ class BookService {
             manager
           );
 
-          if (error.error) {
-            throw error.error;
+          if (auditLog.error) {
+            throw auditLog.error;
           }
-
         const copies: BookCopy[] = [];
         for (const shelf of shelves) {
           const count = shelfLabelCounts[shelf.label];
@@ -419,9 +416,23 @@ class BookService {
             copies.push(copy);
           }
         }
-        await this.bookCopyRepository.createMultiple(copies);
-      });
+        const bookCopyRepo = manager.getRepository(BookCopy)
+        const savedCopies = await bookCopyRepo.save(copies);
 
+        for (const copy of savedCopies) {
+        const copyAudit = await auditLogService.createAuditLog(
+          AuditLogType.CREATE,
+          user_id,
+          copy.id.toString(),
+          EntityType.BOOK_COPY,
+          manager
+        );
+
+        if (copyAudit.error) {
+          throw copyAudit.error;
+        }
+      }
+      });
         result.successCount++;
       } catch (error) {
         result.errors.push({
@@ -434,7 +445,7 @@ class BookService {
     return result;
   }
 
-  async generateErrorSheet(errors: ErrorItemDto[]): Promise<Buffer> {
+  async generateErrorSheet(errors: BulkUploadError[]): Promise<Buffer> {
     const workbook = new Workbook();
 
     const workSheet = setupWorksheet(workbook, {
@@ -444,7 +455,7 @@ class BookService {
     });
 
     for (const error of errors) {
-      workSheet.addRow([error.raw, error.error]);
+      workSheet.addRow([error.row, error.errors.join(";")]);
     }
 
     const buffer = await workbook.xlsx.writeBuffer();

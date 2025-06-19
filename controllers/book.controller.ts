@@ -120,7 +120,7 @@ class BookController {
         );
       }
 
-      const result = await this.bookService.bulkUploadBooks(req.file.buffer,req.user?.id);
+      const result = await this.bookService.bulkUploadBooks(req.file.buffer, req.user?.id);
       return res.status(200).send(result);
     } catch (error) {
       console.log(error);
