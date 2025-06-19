@@ -101,7 +101,11 @@ class BookRepository {
             relations: {
                 authors: true,
                 genres: true,
-                copies: true,
+                copies: {
+                    shelf:{
+                        office:true
+                    }
+                },
                 reviews: true,
             },
         });
