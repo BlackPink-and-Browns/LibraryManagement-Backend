@@ -79,6 +79,10 @@ class GenreService {
             this.logger.info(`Deleted genre with ID ${id}`);
         });
     }
+
+    async getTrendingGenres() {
+      return this.genreRepository.findPopular(8, true)
+    }
 }
 
 export default GenreService;

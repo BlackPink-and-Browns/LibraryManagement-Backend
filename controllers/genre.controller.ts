@@ -8,8 +8,9 @@ import httpException from "../exceptions/http.exception";
 class GenreController {
   constructor(private genreService: GenreService, router: Router) {
     router.get("/", this.getAllGenres.bind(this));
-    router.get("/:id", this.getGenreById.bind(this));
+    router.get("/popular", this.getTrendingGenres.bind(this));
     router.post("/", this.createGenre.bind(this));
+    router.get("/:id", this.getGenreById.bind(this));
     router.delete("/:id", this.deleteGenre.bind(this));
   }
 
@@ -57,6 +58,16 @@ class GenreController {
       next(err);
     }
   }
+
+  async getTrendingGenres(req: Request, res: Response, next: NextFunction) {
+        try {
+            const genres = await this.genreService.getTrendingGenres();
+            res.status(200).json(genres);
+        } catch (error) {
+            console.log(error);
+            next(error);
+        }
+    }
 }
 
 export default GenreController;
