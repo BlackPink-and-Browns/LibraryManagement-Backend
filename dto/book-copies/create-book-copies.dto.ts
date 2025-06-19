@@ -3,6 +3,7 @@ import {
     IsInt,
     IsNotEmpty,
     IsNumber,
+    IsOptional,
     IsString,
     ValidateNested,
 } from "class-validator";
@@ -14,4 +15,7 @@ export class CreateBookCopyDTO {
 
     @IsNotEmpty()
     count: number;
+
+    @IsOptional()
+    shelf_id: number
 }
