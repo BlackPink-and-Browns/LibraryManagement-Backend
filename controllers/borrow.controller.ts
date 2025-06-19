@@ -6,18 +6,21 @@ import httpException from "../exceptions/http.exception";
 import { CreateBorrowDto } from "../dto/borrow/create-borrow.dto";
 import { ReturnBorrowDto } from "../dto/borrow/return-borrow.dto";
 import { BorrowStatus } from "../entities/enums";
+import EmployeeService from "../services/employee.service";
 
 class BorrowController {
-  constructor(private borrowService: BorrowService, router: Router) {
+  constructor(
+    private borrowService: BorrowService,
+    private employeeService: EmployeeService,
+    router: Router
+  ) {
     router.post("/", this.borrowBook.bind(this));
     router.patch("/:borrow_id", this.returnBook.bind(this));
     router.patch("/update_status/:borrow_id", this.reborrowBook.bind(this));
     router.get("/overdue/alerts", this.getOverdueAlerts.bind(this));
-    router.get(
-      "/overdue/check/",
-      this.checkAndReturnOverdues.bind(this)
-    );
+    router.get("/overdue/check/", this.checkAndReturnOverdues.bind(this));
     router.get("/books", this.getBorrowListByStatus.bind(this));
+    router.get("/all/borrowed", this.getAllBorrowedRecords.bind(this));
   }
 
   async borrowBook(req: Request, res: Response, next: NextFunction) {
@@ -94,7 +97,7 @@ class BorrowController {
       // if (isNaN(employeeId)) {
       //   throw new Error("Invalid employee ID");
       // }
-      const employeeId=req.user.id;
+      const employeeId = req.user.id;
       const { result, count } = await this.borrowService.checkAndReturnOverdues(
         employeeId,
         employeeId
@@ -130,6 +133,21 @@ class BorrowController {
       res.status(200).send(borrows);
     } catch (err) {
       next(err);
+    }
+  }
+
+  async getAllBorrowedRecords(req: Request, res: Response, next: NextFunction) {
+    try {
+      const records = await this.borrowService.getBorrowsByStatusForAllUsers(
+        BorrowStatus.BORROWED
+      );
+      res.status(200).json({
+        message: "Fetched all borrow records with status BORROWED",
+        count: records.length,
+        records,
+      });
+    } catch (error) {
+      next(error);
     }
   }
 }
