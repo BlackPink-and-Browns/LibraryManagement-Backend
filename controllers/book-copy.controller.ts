@@ -30,7 +30,8 @@ class BookCopyController {
             const bookCopy = await this.bookCopyService.createBookCopy(
                 createBookCopyDto.book_id,
                 createBookCopyDto.count,
-                req.user?.id
+                req.user?.id,
+                createBookCopyDto.shelf_id
             );
             res.status(201).send(bookCopy);
         } catch (error) {
