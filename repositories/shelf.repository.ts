@@ -1,4 +1,4 @@
-import { IntegerType, LessThan, Repository } from "typeorm";
+import { In, IntegerType, LessThan, Repository } from "typeorm";
 import { Shelf } from "../entities/shelf.entity";
 
 class ShelfRepository {
@@ -101,6 +101,19 @@ class ShelfRepository {
 
   async list(): Promise<Shelf[]> {
       return await this.repository.find({select: {label: true }})
+    }
+
+    async findManyByLabel(labels: string[]) {
+      return this.repository.find({
+          where: {
+            label: In(labels)
+          },
+          select: {
+            id: true,
+            label: true
+          }
+          
+      })
     }
 
 }

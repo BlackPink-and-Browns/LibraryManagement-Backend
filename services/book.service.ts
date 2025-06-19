@@ -20,6 +20,8 @@ import setupWorksheet from "../utils/setupWorksheet";
 import { parseItems } from "../utils/bulkUpload";
 import { ErrorItemDto } from "../dto/bulkupload/create-bulkupload.dto";
 import ShelfRepository from "../repositories/shelf.repository";
+import { BookCopy } from "../entities/bookcopy.entity";
+import BookCopyRepository from "../repositories/book-copies.repository";
 
 interface BookUploadResult {
   totalRows: number;
@@ -36,6 +38,7 @@ interface ParsedBookData {
   cover_image: string;
   authors: string[];
   genres: string[];
+  shelfLabels: string[];
 }
 
 interface BulkError {
@@ -51,6 +54,7 @@ class BookService {
     private authorRepository: AuthorRepository,
     private genreRepository: GenreRepository,
     private shelfRepository: ShelfRepository,
+    private bookCopyRepository: BookCopyRepository,
   ) {}
 
   async createBook(
@@ -263,7 +267,9 @@ class BookService {
       "Cover Image URL",
       "Authors (comma-separated)",
       "Genres (comma-separated)",
+      "Shelf Labels (comma-separated)\nRepeat the label multiple times if multiple copies are to be placed on the same shelf"
     ];
+
 
     const headerRow = worksheet.getRow(1);
     const actualHeaders = (headerRow.values as CellValue[]).slice(1);
@@ -292,6 +298,7 @@ class BookService {
         const cover_image = row.getCell(4).value;
         const authors = row.getCell(5).value;
         const genres = row.getCell(6).value;
+        const shelfLabels = row.getCell(7).value;
 
         if (
           !isbn ||
@@ -299,14 +306,16 @@ class BookService {
           !description ||
           !cover_image ||
           !authors ||
-          !genres
+          !genres ||
+          !shelfLabels
         ) {
           throw new Error(
-            `ISBN, Title, Description, Cover Image, Author(s) and Genre(s) are required`
+            `ISBN, Title, Description, Cover Image, Author(s), Genre(s) and Shelf Lable(s) are required`
           );
         }
         const parsedAuthors = parseItems(authors, `Row ${rowNum}: Authors`);
         const parsedGenres = parseItems(genres, `Row ${rowNum}: Genres`);
+        const parsedShelfLabels = parseItems(shelfLabels, `Row ${rowNum}: Shelf Labels`);
 
         books.push({
           rowNum: rowNum,
@@ -316,6 +325,7 @@ class BookService {
           cover_image: cover_image.toString().trim(),
           authors: parsedAuthors,
           genres: parsedGenres,
+          shelfLabels: parsedShelfLabels
         });
       } catch (error) {
         result.errors.push({
@@ -357,6 +367,21 @@ class BookService {
           throw new Error(`Genres not found: ${missingNames.join(", ")}`);
         }
 
+        const shelfLabelCounts = bookData.shelfLabels.reduce((acc, label) => {
+          const trimmed = label.trim();
+          acc[trimmed] = (acc[trimmed] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const uniqueLabels = Object.keys(shelfLabelCounts);
+        const shelves = await this.shelfRepository.findManyByLabel(uniqueLabels);
+
+        if (shelves.length !== uniqueLabels.length) {
+          const foundLabels = shelves.map((s) => s.label);
+          const missingLabels = uniqueLabels.filter((label) => !foundLabels.includes(label));
+          throw new Error(`Shelves not found: ${missingLabels.join(", ")}`);
+        }
+
         const newBook = new Book();
         newBook.isbn = bookData.isbn;
         newBook.title = bookData.title;
@@ -367,6 +392,18 @@ class BookService {
 
         const book = await this.bookRepository.create(newBook);
 
+        const copies: BookCopy[] = [];
+        for (const shelf of shelves) {
+          const count = shelfLabelCounts[shelf.label];
+          for (let i = 0; i < count; i++) {
+            const copy = new BookCopy();
+            copy.book = book;
+            copy.shelf = shelf;
+            copy.is_available = true;
+            copies.push(copy);
+          }
+        }
+        await this.bookCopyRepository.createMultiple(copies);
         result.successCount++;
       } catch (error) {
         result.errors.push({

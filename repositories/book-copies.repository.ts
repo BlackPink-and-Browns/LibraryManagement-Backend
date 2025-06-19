@@ -8,6 +8,10 @@ class BookCopyRepository {
         return this.repository.save(bookCopy);
     }
 
+    async createMultiple(bookCopies: BookCopy[]) {
+        return this.repository.save(bookCopies)
+    }
+
     async update(id: number, bookCopy): Promise<void> {
         await this.repository.save({ id, ...bookCopy });
     }
