@@ -80,8 +80,8 @@ class WaitlistService {
                     EntityType.WAITLIST,
                     manager
                 );
-                if (error.error || notificationCreate.error ) {
-                    const throwError = error.error ? error.error : notificationCreate.error
+                if (error.error) {
+                    const throwError = error.error
                     throw throwError;
                 }
 
