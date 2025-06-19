@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Genre } from "../entities/genre.entity";
 import { BorrowStatus, WaitlistStatus } from "../entities/enums";
 
@@ -103,6 +103,22 @@ class GenreRepository {
         .getRawMany();
   }
 
+  async list(): Promise<Genre[]> {
+      return await this.repository.find({select: {name: true }})
+    }
+
+  async findManyByName(names: string[]) {
+      return this.repository.find({
+          where: {
+            name: In(names)
+          },
+          select: {
+            id: true,
+            name: true
+          }
+          
+      })
+    }
 
 }
 
