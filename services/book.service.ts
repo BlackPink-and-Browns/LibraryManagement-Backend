@@ -13,28 +13,63 @@ import { AuditLogType, EntityType } from "../entities/enums";
 import { UpdateBookDTO } from "../dto/books/update-book.dto";
 import { authorService } from "../routes/author.route";
 import { genreService } from "../routes/genre.route";
+import AuthorRepository from "../repositories/author.repository";
+import GenreRepository from "../repositories/genre.repository";
+import { CellValue, Workbook } from "exceljs";
+import setupWorksheet from "../utils/setupWorksheet";
+import { parseItems } from "../utils/bulkUpload";
+
+interface BookUploadResult {
+    totalRows: number;
+    successCount: number;
+    failedCount: number;
+    errors: BulkError[];
+}
+
+interface ParsedBookData {
+    rowNum: number;
+    isbn: string;
+    title: string;
+    description: string;
+    cover_image: string;
+    authors: string[];
+    genres: string[];
+}
+
+interface BulkError {
+    row: number;
+    errors: string[];
+}
 
 class BookService {
     private entityManager = datasource.manager;
     private logger = LoggerService.getInstance(BookService.name);
-    constructor(private bookRepository: BookRepository) {}
+    constructor(
+        private bookRepository: BookRepository,
+        private authorRepository: AuthorRepository,
+        private genreRepository: GenreRepository
+    ) {}
 
     async createBook(
         title: string,
         isbn: string,
         description: string,
         cover_image: string,
-        authors: Author[],
-        genres: Genre[],
+        authors: number[],
+        genres: number[],
         user_id?: number
     ): Promise<Book> {
         const book = new Book();
-        book.authors = authors;
+        book.authors = await Promise.all(
+            authors.map((author_id) => authorService.getAuthorByID(author_id))
+        );
         book.title = title;
         book.cover_image = cover_image;
         book.description = description;
         book.isbn = isbn;
-        book.genres = genres;
+        book.genres = await Promise.all(
+            genres.map((genre_id) => genreService.getGenreById(genre_id))
+        );
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(Book);
             const createdBook = await m.save(book);
@@ -53,27 +88,6 @@ class BookService {
             return createdBook;
         });
     }
-
-    // async createBookUsingISBN(bookData:OpenLibraryBook): Promise<Book> {
-    //     const book = new Book()
-    //     book.title = bookData.title
-
-    //     return this.bookRepository.create(book)
-    // }
-
-    // async createBookInBulk(books: Book[],user_id:number): Promise<void> {
-    //     books.forEach((book) => {
-    //         this.createBook(
-    //             book.title,
-    //             book.isbn,
-    //             book.description,
-    //             book.cover_image,
-    //             book.authors,
-    //             book.genres,
-    //             user_id
-    //         );
-    //     });
-    // }
 
     async updateBook(
         id: number,
@@ -182,6 +196,218 @@ class BookService {
 
         this.logger.info("Book returned");
         return book;
+    }
+
+    async createBookBulkTemplate(): Promise<Buffer> {
+        const authors = await this.authorRepository.list();
+        const genres = await this.genreRepository.list();
+
+        const workbook = new Workbook();
+
+        const templateSheet = setupWorksheet(workbook, {
+            name: "Book Template",
+            headers: [
+                "ISBN",
+                "Title",
+                "Description",
+                "Cover Image URL",
+                "Authors (comma-separated)",
+                "Genres (comma-separated)",
+            ],
+            columnWidths: [15, 30, 40, 40, 50, 50],
+        });
+
+        const dataSheet = setupWorksheet(workbook, {
+            name: "Data Definitions",
+            headers: ["Author Name", "Genre Name"],
+            columnWidths: [30, 30],
+        });
+
+        const maxRows = Math.max(authors.length, genres.length);
+        const rows = [];
+        for (let i = 0; i < maxRows; i++) {
+            rows.push([
+                i < authors.length ? authors[i].name : "",
+                i < genres.length ? genres[i].name : "",
+            ]);
+        }
+        dataSheet.addRows(rows);
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
+    }
+
+    async bulkUploadBooks(fileBuffer: Buffer) {
+        const result: BookUploadResult = {
+            totalRows: 0,
+            successCount: 0,
+            failedCount: 0,
+            errors: [],
+        };
+
+        const workbook = new Workbook();
+        await workbook.xlsx.load(fileBuffer);
+        const worksheet = workbook.getWorksheet("Book Template");
+        if (!worksheet) {
+            throw new httpException(400, "Book Template worksheet not found");
+        }
+
+        const expectedHeaders = [
+            "ISBN",
+            "Title",
+            "Description",
+            "Cover Image URL",
+            "Authors (comma-separated)",
+            "Genres (comma-separated)",
+        ];
+
+        const headerRow = worksheet.getRow(1);
+        const actualHeaders = (headerRow.values as CellValue[]).slice(1);
+        const headersMatch = expectedHeaders.every(
+            (header, idx) => header === actualHeaders[idx]
+        );
+        if (!headersMatch) {
+            throw new httpException(
+                400,
+                `Invalid headers found. Expected headers: ${expectedHeaders.join(
+                    ", "
+                )}`
+            );
+        }
+
+        const books: ParsedBookData[] = [];
+        const rowCount = worksheet.rowCount;
+        result.totalRows = rowCount - 1;
+
+        for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
+            try {
+                const row = worksheet.getRow(rowNum);
+                if (!row.hasValues) continue;
+
+                const isbn = row.getCell(1).value;
+                const title = row.getCell(2).value;
+                const description = row.getCell(3).value;
+                const cover_image = row.getCell(4).value;
+                const authors = row.getCell(5).value;
+                const genres = row.getCell(6).value;
+
+                if (
+                    !isbn ||
+                    !title ||
+                    !description ||
+                    !cover_image ||
+                    !authors ||
+                    !genres
+                ) {
+                    throw new Error(
+                        `ISBN, Title, Description, Cover Image, Author(s) and Genre(s) are required`
+                    );
+                }
+                const parsedAuthors = parseItems(
+                    authors,
+                    `Row ${rowNum}: Authors`
+                );
+                const parsedGenres = parseItems(
+                    genres,
+                    `Row ${rowNum}: Genres`
+                );
+
+                books.push({
+                    rowNum: rowNum,
+                    isbn: isbn.toString().trim(),
+                    title: title.toString().trim(),
+                    description: description.toString().trim(),
+                    cover_image: cover_image.toString().trim(),
+                    authors: parsedAuthors,
+                    genres: parsedGenres,
+                });
+            } catch (error) {
+                result.errors.push({
+                    row: rowNum,
+                    errors: [error.message],
+                });
+                result.failedCount++;
+            }
+        }
+
+        for (const bookData of books) {
+            try {
+                const existingBook =
+                    await this.bookRepository.findPreviewByIsbn(bookData.isbn);
+                console.log("Checking existing books");
+                console.log(existingBook);
+
+                if (existingBook) {
+                    throw new Error(
+                        `Book with ISBN ${bookData.isbn} already exists`
+                    );
+                }
+
+                const authors = await this.authorRepository.findManyByName(
+                    bookData.authors
+                );
+                if (authors.length !== bookData.authors.length) {
+                    const foundNames = authors.map((a) => a.name);
+                    const missingNames = bookData.authors.filter(
+                        (name) => !foundNames.includes(name)
+                    );
+                    throw new Error(
+                        `Authors not found: ${missingNames.join(", ")}`
+                    );
+                }
+
+                const genres = await this.genreRepository.findManyByName(
+                    bookData.genres
+                );
+                if (genres.length !== bookData.genres.length) {
+                    const foundNames = genres.map((g) => g.name);
+                    const missingNames = bookData.genres.filter(
+                        (name) => !foundNames.includes(name)
+                    );
+                    throw new Error(
+                        `Genres not found: ${missingNames.join(", ")}`
+                    );
+                }
+
+                const newBook = new Book();
+                newBook.isbn = bookData.isbn;
+                newBook.title = bookData.title;
+                newBook.description = bookData.description;
+                newBook.cover_image = bookData.cover_image;
+                newBook.authors = authors;
+                newBook.genres = genres;
+
+                const book = await this.bookRepository.create(newBook);
+
+                result.successCount++;
+            } catch (error) {
+                result.errors.push({
+                    row: bookData.rowNum,
+                    errors: [error.message],
+                });
+                result.failedCount++;
+            }
+        }
+        return result;
+    }
+
+    async generateErrorSheet(errors: BulkError[]) {
+        const workbook = new Workbook();
+
+        const workSheet = setupWorksheet(workbook, {
+            name: "Validation Errors",
+            headers: ["Row Number", "Error Messages"],
+            columnWidths: [10, 100],
+        });
+
+        errors.sort((a, b) => a.row - b.row);
+
+        for (const error of errors) {
+            workSheet.addRow([error.row, error.errors.join("\n")]);
+        }
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
     }
 }
 

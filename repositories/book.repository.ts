@@ -164,6 +164,15 @@ class BookRepository {
         })
     }
 
+    async findPreviewByIsbn(isbn: string) {
+         return this.repository.findOne({
+            where: {isbn},
+            select: {
+                id: true,
+            }
+        })
+    }
+
     async totalCount({previousCount = false}: {previousCount?: boolean}): Promise<{ totalCount: number; previousMonthCount?: number; }> {
         const totalCount = await this.repository.count();
         if (previousCount) {
