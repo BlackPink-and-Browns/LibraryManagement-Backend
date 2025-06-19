@@ -254,6 +254,40 @@ class BorrowRecordRepository {
       },
     });
   }
+  async findBorrowRecordsByEmployeeId(
+    employeeId: number
+  ): Promise<BorrowRecord[]> {
+    return this.repository.find({
+      where: {
+        borrowedBy: { id: employeeId },
+      },
+       select: {
+        id: true,
+        status: true,
+        borrowedBy:true,
+        bookCopy: {
+          id: true,
+          book: {
+            id:true,
+            title: true,
+            genres: {
+              id: true,
+              name: true
+            },
+            avg_rating:true,
+          },
+        },
+      },
+      relations: {
+        bookCopy: {
+          book: {
+            genres:true
+          },
+        },
+      },
+    });
+  }
+
 }
 
 export default BorrowRecordRepository;

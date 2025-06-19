@@ -22,12 +22,13 @@ import ShelfRepository from "../repositories/shelf.repository";
 import { BookCopy } from "../entities/bookcopy.entity";
 import BookCopyRepository from "../repositories/book-copies.repository";
 import { BulkUploadError, BulkUploadErrorDto } from "../dto/bulkupload/create-bulkupload.dto";
+import { borrowRepository } from "../routes/borrow.route";
 
 interface BookUploadResult {
-  totalRows: number;
-  successCount: number;
-  failedCount: number;
-  errors: BulkError[];
+    totalRows: number;
+    successCount: number;
+    failedCount: number;
+    errors: BulkError[];
 }
 
 interface ParsedBookData {
@@ -42,8 +43,8 @@ interface ParsedBookData {
 }
 
 interface BulkError {
-  row: number;
-  errors: string[];
+    row: number;
+    errors: string[];
 }
 
 class BookService {
@@ -57,158 +58,160 @@ class BookService {
     private bookCopyRepository: BookCopyRepository,
   ) {}
 
-  async createBook(
-    title: string,
-    isbn: string,
-    description: string,
-    cover_image: string,
-    authors: number[],
-    genres: number[],
-    user_id?: number
-  ): Promise<Book> {
-    const book = new Book();
-    book.authors = await Promise.all(
-      authors.map((author_id) => authorService.getAuthorByID(author_id))
-    );
-    book.title = title;
-    book.cover_image = cover_image;
-    book.description = description;
-    book.isbn = isbn;
-    book.genres = await Promise.all(
-      genres.map((genre_id) => genreService.getGenreById(genre_id))
-    );
-    return await this.entityManager.transaction(async (manager) => {
-      const m = manager.getRepository(Book);
-      const createdBook = await m.save(book);
-      this.logger.info("Book Created");
-      // throw new httpException(400, "qwerty");
-      const error = await auditLogService.createAuditLog(
-        AuditLogType.CREATE,
-        user_id,
-        createdBook.id.toString(),
-        EntityType.BOOK,
-        manager
-      );
-      if (error.error) {
-        throw error.error;
-      }
-      return createdBook;
-    });
-  }
-
-  async updateBook(
-    id: number,
-    updateData: Partial<UpdateBookDTO>,
-    user_id: number
-  ): Promise<void> {
-    const book = await this.bookRepository.findOneByID(id);
-    if (!book) {
-      this.logger.error("book not found");
-      throw new httpException(400, "Book not found");
+    async createBook(
+        title: string,
+        isbn: string,
+        description: string,
+        cover_image: string,
+        authors: number[],
+        genres: number[],
+        user_id?: number
+    ): Promise<Book> {
+        const book = new Book();
+        book.authors = await Promise.all(
+            authors.map((author_id) => authorService.getAuthorByID(author_id))
+        );
+        book.title = title;
+        book.cover_image = cover_image;
+        book.description = description;
+        book.isbn = isbn;
+        book.genres = await Promise.all(
+            genres.map((genre_id) => genreService.getGenreById(genre_id))
+        );
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Book);
+            const createdBook = await m.save(book);
+            this.logger.info("Book Created");
+            // throw new httpException(400, "qwerty");
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.CREATE,
+                user_id,
+                createdBook.id.toString(),
+                EntityType.BOOK,
+                manager
+            );
+            if (error.error) {
+                throw error.error;
+            }
+            return createdBook;
+        });
     }
 
-    if (updateData.title !== undefined) book.title = updateData.title;
-    if (updateData.isbn !== undefined) book.isbn = updateData.isbn;
-    if (updateData.description !== undefined)
-      book.description = updateData.description;
-    if (updateData.cover_image !== undefined)
-      book.cover_image = updateData.cover_image;
+    async updateBook(
+        id: number,
+        updateData: Partial<UpdateBookDTO>,
+        user_id: number
+    ): Promise<void> {
+        const book = await this.bookRepository.findOneByID(id);
+        if (!book) {
+            this.logger.error("book not found");
+            throw new httpException(400, "Book not found");
+        }
 
-    if (updateData.authors !== undefined) {
-      book.authors = await Promise.all(
-        updateData.authors.map((author_id) =>
-          authorService.getAuthorByID(author_id)
-        )
-      );
-    }
-    if (updateData.genres !== undefined) {
-      book.genres = await Promise.all(
-        updateData.genres.map((genre_id) => genreService.getGenreById(genre_id))
-      );
-    }
-    return await this.entityManager.transaction(async (manager) => {
-      const m = manager.getRepository(Book);
-      await m.save({ id, ...book });
-      this.logger.info("Book Updated");
-      const error = await auditLogService.createAuditLog(
-        AuditLogType.UPDATE,
-        user_id,
-        id.toString(),
-        EntityType.BOOK,
-        manager
-      );
-      if (error.error) {
-        throw error.error;
-      }
-    });
-  }
+        if (updateData.title !== undefined) book.title = updateData.title;
+        if (updateData.isbn !== undefined) book.isbn = updateData.isbn;
+        if (updateData.description !== undefined)
+            book.description = updateData.description;
+        if (updateData.cover_image !== undefined)
+            book.cover_image = updateData.cover_image;
 
-  async deleteBookById(id: number, user_id: number): Promise<void> {
-    const book = await this.bookRepository.findOneByID(id);
-    if (!book) {
-      this.logger.error("book not found");
-      throw new httpException(400, "Book not found");
-    }
-    return await this.entityManager.transaction(async (manager) => {
-      const m = manager.getRepository(Book);
-      await m.delete({ id });
-      this.logger.info("Book Deleted");
-      const error = await auditLogService.createAuditLog(
-        AuditLogType.DELETE,
-        user_id,
-        id.toString(),
-        EntityType.BOOK,
-        manager
-      );
-      if (error.error) {
-        throw error.error;
-      }
-    });
-  }
-
-  async getAllBooks(): Promise<Book[]> {
-    this.logger.info("Book Array Returned");
-    const books = await this.bookRepository.findMany();
-
-    return books;
-  }
-
-  async getBookById(id: number): Promise<Book> {
-    const book = await this.bookRepository.findOneByID(id);
-    if (!book) {
-      this.logger.error("book not found");
-      throw new httpException(400, "Book not found");
-    }
-    if (book.copies.length !== 0) {
-      const is_available = book.copies.some((copy) => copy.is_available);
-      book.is_available = is_available;
-      await this.bookRepository.update(id, book);
+        if (updateData.authors !== undefined) {
+            book.authors = await Promise.all(
+                updateData.authors.map((author_id) =>
+                    authorService.getAuthorByID(author_id)
+                )
+            );
+        }
+        if (updateData.genres !== undefined) {
+            book.genres = await Promise.all(
+                updateData.genres.map((genre_id) =>
+                    genreService.getGenreById(genre_id)
+                )
+            );
+        }
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Book);
+            await m.save({ id, ...book });
+            this.logger.info("Book Updated");
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.UPDATE,
+                user_id,
+                id.toString(),
+                EntityType.BOOK,
+                manager
+            );
+            if (error.error) {
+                throw error.error;
+            }
+        });
     }
 
-    this.logger.info("Book returned");
-    return this.bookRepository.findOneByID(id);
-  }
-
-  async getBookByISBN(isbn: string): Promise<Book> {
-    const book = await this.bookRepository.findOnebyISBN(isbn);
-    if (!book) {
-      this.logger.error("book not found");
-      throw new httpException(400, "Book not found");
+    async deleteBookById(id: number, user_id: number): Promise<void> {
+        const book = await this.bookRepository.findOneByID(id);
+        if (!book) {
+            this.logger.error("book not found");
+            throw new httpException(400, "Book not found");
+        }
+        return await this.entityManager.transaction(async (manager) => {
+            const m = manager.getRepository(Book);
+            await m.delete({ id });
+            this.logger.info("Book Deleted");
+            const error = await auditLogService.createAuditLog(
+                AuditLogType.DELETE,
+                user_id,
+                id.toString(),
+                EntityType.BOOK,
+                manager
+            );
+            if (error.error) {
+                throw error.error;
+            }
+        });
     }
-    const is_available = book.copies.some((copy) => copy.is_available);
-    book.is_available = is_available;
-    await this.bookRepository.update(book.id, book);
 
-    this.logger.info("Book returned");
-    return book;
-  }
+    async getAllBooks(): Promise<Book[]> {
+        this.logger.info("Book Array Returned");
+        const books = await this.bookRepository.findMany();
+
+        return books;
+    }
+
+    async getBookById(id: number): Promise<Book> {
+        const book = await this.bookRepository.findOneByID(id);
+        if (!book) {
+            this.logger.error("book not found");
+            throw new httpException(400, "Book not found");
+        }
+        if (book.copies.length !== 0) {
+            const is_available = book.copies.some((copy) => copy.is_available);
+            book.is_available = is_available;
+            await this.bookRepository.update(id, book);
+        }
+
+        this.logger.info("Book returned");
+        return this.bookRepository.findOneByID(id);
+    }
+
+    async getBookByISBN(isbn: string): Promise<Book> {
+        const book = await this.bookRepository.findOnebyISBN(isbn);
+        if (!book) {
+            this.logger.error("book not found");
+            throw new httpException(400, "Book not found");
+        }
+        const is_available = book.copies.some((copy) => copy.is_available);
+        book.is_available = is_available;
+        await this.bookRepository.update(book.id, book);
+
+        this.logger.info("Book returned");
+        return book;
+    }
 
   async createBookBulkTemplate(): Promise<Buffer> {
     const authors = await this.authorRepository.list();
     const genres = await this.genreRepository.list();
     const shelfLabels = await this.shelfRepository.list();
 
-    const workbook = new Workbook();
+        const workbook = new Workbook();
 
     const templateSheet = setupWorksheet(workbook, {
       name: "Book Template",
@@ -241,24 +244,24 @@ class BookService {
     }
     dataSheet.addRows(rows);
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(buffer);
-  }
-
-  async bulkUploadBooks(fileBuffer: Buffer, user_id: number) {
-    const result: BookUploadResult = {
-      totalRows: 0,
-      successCount: 0,
-      failedCount: 0,
-      errors: [],
-    };
-
-    const workbook = new Workbook();
-    await workbook.xlsx.load(fileBuffer);
-    const worksheet = workbook.getWorksheet("Book Template");
-    if (!worksheet) {
-      throw new httpException(400, "Book Template worksheet not found");
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
     }
+
+    async bulkUploadBooks(fileBuffer: Buffer, user_id: number) {
+        const result: BookUploadResult = {
+            totalRows: 0,
+            successCount: 0,
+            failedCount: 0,
+            errors: [],
+        };
+
+        const workbook = new Workbook();
+        await workbook.xlsx.load(fileBuffer);
+        const worksheet = workbook.getWorksheet("Book Template");
+        if (!worksheet) {
+            throw new httpException(400, "Book Template worksheet not found");
+        }
 
     const expectedHeaders = [
       "ISBN",
@@ -271,26 +274,28 @@ class BookService {
     ];
 
 
-    const headerRow = worksheet.getRow(1);
-    const actualHeaders = (headerRow.values as CellValue[]).slice(1);
-    const headersMatch = expectedHeaders.every(
-      (header, idx) => header === actualHeaders[idx]
-    );
-    if (!headersMatch) {
-      throw new httpException(
-        400,
-        `Invalid headers found. Expected headers: ${expectedHeaders.join(", ")}`
-      );
-    }
+        const headerRow = worksheet.getRow(1);
+        const actualHeaders = (headerRow.values as CellValue[]).slice(1);
+        const headersMatch = expectedHeaders.every(
+            (header, idx) => header === actualHeaders[idx]
+        );
+        if (!headersMatch) {
+            throw new httpException(
+                400,
+                `Invalid headers found. Expected headers: ${expectedHeaders.join(
+                    ", "
+                )}`
+            );
+        }
 
-    const books: ParsedBookData[] = [];
-    const rowCount = worksheet.rowCount;
-    result.totalRows = rowCount - 1;
+        const books: ParsedBookData[] = [];
+        const rowCount = worksheet.rowCount;
+        result.totalRows = rowCount - 1;
 
-    for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
-      try {
-        const row = worksheet.getRow(rowNum);
-        if (!row.hasValues) continue;
+        for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
+            try {
+                const row = worksheet.getRow(rowNum);
+                if (!row.hasValues) continue;
 
         const isbn = row.getCell(1).value;
         const title = row.getCell(2).value;
@@ -336,25 +341,28 @@ class BookService {
       }
     }
 
-    for (const bookData of books) {
-      try {
-        const existingBook = await this.bookRepository.findPreviewByIsbn(
-          bookData.isbn
-        );
-        if (existingBook) {
-          throw new Error(`Book with ISBN ${bookData.isbn} already exists`);
-        }
+        for (const bookData of books) {
+            try {
+                const existingBook =
+                    await this.bookRepository.findPreviewByIsbn(bookData.isbn);
+                if (existingBook) {
+                    throw new Error(
+                        `Book with ISBN ${bookData.isbn} already exists`
+                    );
+                }
 
-        const authors = await this.authorRepository.findManyByName(
-          bookData.authors
-        );
-        if (authors.length !== bookData.authors.length) {
-          const foundNames = authors.map((a) => a.name);
-          const missingNames = bookData.authors.filter(
-            (name) => !foundNames.includes(name)
-          );
-          throw new Error(`Authors not found: ${missingNames.join(", ")}`);
-        }
+                const authors = await this.authorRepository.findManyByName(
+                    bookData.authors
+                );
+                if (authors.length !== bookData.authors.length) {
+                    const foundNames = authors.map((a) => a.name);
+                    const missingNames = bookData.authors.filter(
+                        (name) => !foundNames.includes(name)
+                    );
+                    throw new Error(
+                        `Authors not found: ${missingNames.join(", ")}`
+                    );
+                }
 
         const genres = await this.genreRepository.findManyByName(
           bookData.genres
@@ -384,13 +392,13 @@ class BookService {
         await this.entityManager.transaction(async (manager) => {
           const bookRepo = manager.getRepository(Book);
 
-          const newBook = new Book();
-          newBook.isbn = bookData.isbn;
-          newBook.title = bookData.title;
-          newBook.description = bookData.description;
-          newBook.cover_image = bookData.cover_image;
-          newBook.authors = authors;
-          newBook.genres = genres;
+                    const newBook = new Book();
+                    newBook.isbn = bookData.isbn;
+                    newBook.title = bookData.title;
+                    newBook.description = bookData.description;
+                    newBook.cover_image = bookData.cover_image;
+                    newBook.authors = authors;
+                    newBook.genres = genres;
 
           const savedBook = await bookRepo.save(newBook);
 
@@ -448,23 +456,90 @@ class BookService {
   async generateErrorSheet(errors: BulkUploadError[]): Promise<Buffer> {
     const workbook = new Workbook();
 
-    const workSheet = setupWorksheet(workbook, {
-      name: "Validation Errors",
-      headers: ["Raw Data", "Error Message"],
-      columnWidths: [50, 100],
-    });
+        const workSheet = setupWorksheet(workbook, {
+            name: "Validation Errors",
+            headers: ["Raw Data", "Error Message"],
+            columnWidths: [50, 100],
+        });
 
     for (const error of errors) {
       workSheet.addRow([error.row, error.errors.join(";")]);
     }
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(buffer);
-  }
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
+    }
 
-  async getTrendingBooks() {
-    return this.bookRepository.findPopular(8, true);
-  }
+    async getTrendingBooks() {
+        return this.bookRepository.findPopular(8, true);
+    }
+
+    async getRecommendedBooks(user_id: number): Promise<Book[]> {
+        const userBorrowRecords =
+            await borrowRepository.findBorrowRecordsByEmployeeId(user_id);
+        const recommendedGenresMap: Record<
+            string,
+            { genre: Genre; count: number }
+        > = {};
+        const bookhistory: Book[] = [];
+        
+
+        userBorrowRecords.forEach((borrowRecord) => {
+            const book = borrowRecord.bookCopy.book;
+            bookhistory.push(book);
+
+            book.genres.forEach((genre) => {
+                const key = genre.id.toString(); // or use genre.name as key if preferred
+                if (recommendedGenresMap[key]) {
+                    recommendedGenresMap[key].count += 1;
+                } else {
+                    recommendedGenresMap[key] = {
+                        genre,
+                        count: 1,
+                    };
+                }
+            });
+        });
+
+        // Convert to array and sort by count descending
+        const sortedGenres = Object.values(recommendedGenresMap).sort(
+            (a, b) => b.count - a.count
+        );
+
+        // If you want just the genres, not their counts:
+        const recommendedGenres: Genre[] = sortedGenres.map(
+            (entry) => entry.genre
+        );
+
+        // Optional: top N genres (e.g., top 3)
+        const topGenres = recommendedGenres.slice(0, 4);
+
+        // 1. Create a Set of genre IDs for quick lookup
+        const genreIds = new Set(topGenres.map((g) => g.id));
+
+        // 2. Create a Set of previously read book IDs
+        const readBookIds = new Set(bookhistory.map((b) => b.id));
+
+        const books = await this.bookRepository.findMany();
+        const scoredBooks = books
+            .filter((book) => !readBookIds.has(book.id))
+            .map((book) => {
+                const matchingGenres = book.genres.filter((g) =>
+                    genreIds.has(g.id)
+                );
+                return {
+                    book,
+                    score: matchingGenres.length,
+                };
+            })
+            .filter((entry) => entry.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
+
+		const recommendedBooks: Book[] = scoredBooks.map((entry) => entry.book);
+		this.logger.info("recommended books returned")
+		return recommendedBooks
+    }
 }
 
 export default BookService;
