@@ -326,9 +326,6 @@ class BookService {
         const existingBook = await this.bookRepository.findPreviewByIsbn(
           bookData.isbn
         );
-        console.log("Checking existing books");
-        console.log(existingBook);
-
         if (existingBook) {
           throw new Error(`Book with ISBN ${bookData.isbn} already exists`);
         }
@@ -393,6 +390,11 @@ class BookService {
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
+
+  async getTrendingBooks() {
+      return this.bookRepository.findPopular(8, true)
+    }
+
 }
 
 export default BookService;

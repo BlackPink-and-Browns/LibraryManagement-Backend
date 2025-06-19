@@ -1,4 +1,4 @@
-import { Between, IntegerType, LessThan, Repository } from "typeorm";
+import { Between, In, IntegerType, LessThan, Repository } from "typeorm";
 import { Book } from "../entities/book.entity";
 import { BorrowStatus, WaitlistStatus } from "../entities/enums";
 
@@ -214,17 +214,17 @@ class BookRepository {
         });  
     }
 
-    async findPopular(take: number = 3) {
+    async findPopular(take: number = 3, descriptive: boolean = false) {
         const now = new Date();
         const oneMonthAgo = new Date(); 
         oneMonthAgo.setMonth(now.getMonth() - 1);
 
-        return this.repository.createQueryBuilder('book')
+        const popularityResults = await this.repository.createQueryBuilder('book')
             .leftJoin('book.copies', 'copy')
             .leftJoin('copy.borrowRecords', 'borrow', 
                 `borrow.borrowed_at >= :startDate AND
-                 borrow.status = :borrowStatus  
-                `, { startDate: oneMonthAgo, borrowStatus: BorrowStatus.BORROWED })
+                borrow.status = :borrowStatus`, 
+                { startDate: oneMonthAgo, borrowStatus: BorrowStatus.BORROWED })
             .leftJoin('waitlist', 'waitlist', `
                 waitlist.book_id = book.id AND
                 waitlist.status = :waitlistStatus
@@ -250,7 +250,66 @@ class BookRepository {
             .limit(take)
             .setParameter('startDate', oneMonthAgo)
             .getRawMany();
+
+        if (descriptive) {
+            const bookIds = popularityResults.map(b => b.id);
+            const books = await this.repository.find({
+                where: {
+                    id: In(bookIds)
+                },
+                select: {
+                    id: true,
+                    isbn: true,
+                    title: true,
+                    description: true,
+                    cover_image: true,
+                    avg_rating: true,
+                    is_available: true,
+                    authors: {
+                        id: true,
+                        name: true,
+                    },
+                    genres: {
+                        id: true,
+                        name: true,
+                    },
+                    copies: {
+                        id: true,
+                        shelf: {
+                            label: true,
+                            office: true,
+                        },
+                        is_available: true
+                    },
+                    reviews: {
+                        id: true,
+                        rating: true,
+                        content: true,
+                        employee: {
+                            id: true,
+                            name: true
+                        }
+                    },
+                },
+                relations: {
+                    authors: true,
+                    genres: true,
+                    copies: {
+                        shelf: true,
+                    },
+                    reviews: {
+                        employee: true
+                    },
+                },
+            });
+
+            const booksById = Object.fromEntries(books.map(b => [b.id, b]));
+            return bookIds.map(id => booksById[id]);
+        }
+
+        return popularityResults;
     }
+
 }
 
 

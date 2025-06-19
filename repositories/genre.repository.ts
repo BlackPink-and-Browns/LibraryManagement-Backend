@@ -63,44 +63,74 @@ class GenreRepository {
     await this.repository.remove(genre);
   }
 
-  async findPopular(take: number = 3) {
-    const now = new Date();
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(now.getMonth() - 1);
+  async findPopular(take: number = 3, descriptive: boolean = false) {
+      const now = new Date();
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(now.getMonth() - 1);
 
-    return this.repository
-        .createQueryBuilder('genre')
-        .leftJoin('genre.books', 'book')
-        .leftJoin('book.copies', 'copy')
-        .leftJoin('copy.borrowRecords', 'borrow', `
-            borrow.borrowed_at >= :startDate AND
-            borrow.status = :borrowStatus
-        `, { startDate: oneMonthAgo, borrowStatus: BorrowStatus.BORROWED })
-        .leftJoin('waitlist', 'waitlist', `
-            waitlist.book_id = book.id AND
-            waitlist.status = :waitlistStatus
-        `, { waitlistStatus: WaitlistStatus.REQUESTED })
-        .select('genre.id', 'id')
-        .addSelect('genre.name', 'name')
-        .addSelect('COUNT(DISTINCT borrow.id)', 'borrow_count')
-        .addSelect(`
-            COUNT(DISTINCT CASE
-              WHEN waitlist."created_at" >= :startDate THEN waitlist.id
-              ELSE NULL
-            END)
-        `, 'waitlist_count')
-        .addSelect(`
-            COUNT(DISTINCT borrow.id) +
-            COUNT(DISTINCT CASE
-              WHEN waitlist."created_at" >= :startDate THEN waitlist.id
-              ELSE NULL
-            END)
-        `, 'popularity_score')
-        .groupBy('genre.id')
-        .orderBy('popularity_score', 'DESC')
-        .limit(take)
-        .setParameter('startDate', oneMonthAgo)
-        .getRawMany();
+      const popularityResults = await this.repository
+          .createQueryBuilder('genre')
+          .leftJoin('genre.books', 'book')
+          .leftJoin('book.copies', 'copy')
+          .leftJoin('copy.borrowRecords', 'borrow', `
+              borrow.borrowed_at >= :startDate AND
+              borrow.status = :borrowStatus
+          `, { startDate: oneMonthAgo, borrowStatus: BorrowStatus.BORROWED })
+          .leftJoin('waitlist', 'waitlist', `
+              waitlist.book_id = book.id AND
+              waitlist.status = :waitlistStatus
+          `, { waitlistStatus: WaitlistStatus.REQUESTED })
+          .select('genre.id', 'id')
+          .addSelect('genre.name', 'name')
+          .addSelect('COUNT(DISTINCT borrow.id)', 'borrow_count')
+          .addSelect(`
+              COUNT(DISTINCT CASE
+                WHEN waitlist."created_at" >= :startDate THEN waitlist.id
+                ELSE NULL
+              END)
+          `, 'waitlist_count')
+          .addSelect(`
+              COUNT(DISTINCT borrow.id) +
+              COUNT(DISTINCT CASE
+                WHEN waitlist."created_at" >= :startDate THEN waitlist.id
+                ELSE NULL
+              END)
+          `, 'popularity_score')
+          .groupBy('genre.id')
+          .orderBy('popularity_score', 'DESC')
+          .limit(take)
+          .setParameter('startDate', oneMonthAgo)
+          .getRawMany();
+
+
+      if (descriptive) {
+          const genreIds = popularityResults.map(g => g.id);
+          const detailedGenres = await this.repository.find({
+              where: {
+                  id: In(genreIds)
+              },
+              select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  books: {
+                      id: true,
+                      isbn: true,
+                      title: true,
+                      cover_image: true,
+                      description: true
+                  }
+              },
+              relations: {
+                  books: true
+              }
+          });
+
+          const genreMap = Object.fromEntries(detailedGenres.map(g => [g.id, g]));
+          return genreIds.map(id => genreMap[id]);
+      }
+
+      return popularityResults;
   }
 
   async list(): Promise<Genre[]> {
