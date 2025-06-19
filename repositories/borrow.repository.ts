@@ -269,10 +269,15 @@ class BorrowRecordRepository {
           id: true,
           book: {
             id:true,
+            is_available: true,
             title: true,
             genres: {
               id: true,
               name: true
+            },
+            authors: {
+              id: true,
+              name: true,
             },
             avg_rating:true,
           },
@@ -281,7 +286,8 @@ class BorrowRecordRepository {
       relations: {
         bookCopy: {
           book: {
-            genres:true
+            genres:true,
+            authors: true
           },
         },
       },
