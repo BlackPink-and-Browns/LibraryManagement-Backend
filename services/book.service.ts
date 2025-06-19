@@ -15,8 +15,30 @@ import { authorService } from "../routes/author.route";
 import { genreService } from "../routes/genre.route";
 import AuthorRepository from "../repositories/author.repository";
 import GenreRepository from "../repositories/genre.repository";
-import { Workbook } from "exceljs";
+import { CellValue, Workbook } from "exceljs";
 import setupWorksheet from "../utils/setupWorksheet";
+import { parseItems } from "../utils/bulkUpload";
+
+interface BookUploadResult {
+  totalRows: number;
+  successCount: number;
+  failedCount: number;
+  errors: Array<{
+    row: number;
+    isbn?: string;
+    title?: string;
+    errors: string[];
+  }>;
+}
+
+interface ParsedBookData {
+  isbn: string;
+  title: string;
+  description: string;
+  cover_image: string;
+  authors: string[];
+  genres: string[];
+}
 
 class BookService {
     private entityManager = datasource.manager;
@@ -205,10 +227,10 @@ class BookService {
             'Title',
             'Description',
             'Cover Image URL',
-            'Author IDs (comma-separated)',
-            'Genre IDs (comma-separated)',
+            'Authors (comma-separated)',
+            'Genres (comma-separated)',
             ],
-            columnWidths: [15, 30, 40, 40, 30, 30],
+            columnWidths: [15, 30, 40, 40, 50, 50],
         });
 
         const dataSheet = setupWorksheet(workbook, {
@@ -230,6 +252,123 @@ class BookService {
         const buffer = await workbook.xlsx.writeBuffer();
         return Buffer.from(buffer);
     }
-}
+
+    async bulkUploadBooks(fileBuffer: Buffer) {
+        const result: BookUploadResult = {
+        totalRows: 0,
+        successCount: 0,
+        failedCount: 0,
+        errors: []
+        };
+
+        const workbook = new Workbook();
+        await workbook.xlsx.load(fileBuffer);
+        const worksheet = workbook.getWorksheet('Book Template');
+        if (!worksheet) {
+            throw new httpException(400, 'Book Template worksheet not found');
+        }
+
+        const expectedHeaders = [
+            'ISBN',
+            'Title',
+            'Description',
+            'Cover Image URL',
+            'Authors (comma-separated)',
+            'Genres (comma-separated)',
+        ];
+
+        const headerRow = worksheet.getRow(1);
+        const actualHeaders = (headerRow.values as CellValue[]).slice(1);
+        const headersMatch = expectedHeaders.every((header, idx) => header === actualHeaders[idx]);
+        if (!headersMatch) {
+            throw new httpException(400, `Invalid headers found. Expected headers: ${expectedHeaders.join(', ')}`);
+        }
+
+        const books: ParsedBookData[] = [];
+        const rowCount = worksheet.rowCount;
+        result.totalRows = rowCount - 1;
+
+        for (let rowNum = 2; rowNum <= rowCount; rowNum++) {
+            try {
+                const row = worksheet.getRow(rowNum);
+                if (!row.hasValues) continue;
+
+                const isbn = row.getCell(1).value;
+                const title = row.getCell(2).value;
+                const description = row.getCell(3).value;
+                const cover_image = row.getCell(4).value;
+                const authors = row.getCell(5).value
+                const genres = row.getCell(6).value
+
+                if (!isbn || !title || !description || !cover_image || !authors || !genres) {
+                    throw new Error(`Row ${rowNum}: ISBN, Title, Description, Cover Image, Author(s) and Genre(s) are required`);
+                }
+                const parsedAuthors = parseItems(authors, `Row ${rowNum}: Authors`);
+                const parsedGenres = parseItems(genres, `Row ${rowNum}: Genres`);
+
+                books.push({
+                    isbn: isbn.toString().trim(),
+                    title: title.toString().trim(),
+                    description: description.toString().trim(),
+                    cover_image: cover_image.toString().trim(),
+                    authors: parsedAuthors,
+                    genres: parsedGenres,
+                })
+            } catch (error) {
+                result.errors.push({
+                    row: rowNum,
+                    errors: [error.message]
+                });
+                result.failedCount++;
+            }
+        }
+
+        for (const bookData of books) {
+            try {
+                const existingBook = await this.bookRepository.findPreviewByIsbn( bookData.isbn );
+
+                    if (existingBook) {
+                    throw new Error(`Book with ISBN ${bookData.isbn} already exists`);
+                    }
+
+                    const authors = await this.authorRepository.findManyByName(bookData.authors);
+                    if (authors.length !== bookData.authors.length) {
+                        const foundNames = authors.map(a => a.name);
+                        const missingNames = bookData.authors.filter(name => !foundNames.includes(name));
+                        throw new Error(`Authors not found: ${missingNames.join(', ')}`);
+                    }
+
+                    const genres = await this.genreRepository.findManyByName(bookData.genres);
+                    if (genres.length !== bookData.genres.length) {
+                        const foundNames = genres.map(g => g.name);
+                        const missingNames = bookData.genres.filter(name => !foundNames.includes(name));
+                        throw new Error(`Genres not found: ${missingNames.join(', ')}`);
+                    }
+
+                    const newBook = new Book();
+                    newBook.isbn = bookData.isbn;
+                    newBook.title = bookData.title;
+                    newBook.description = bookData.description;
+                    newBook.cover_image = bookData.cover_image;
+                    newBook.authors = authors;
+                    newBook.genres = genres;
+
+                    const book = await this.bookRepository.create(newBook);
+
+                    result.successCount++;
+                    } catch (error) {
+                    result.errors.push({
+                        row: null,
+                        isbn: bookData.isbn,
+                        title: bookData.title,
+                        errors: [error.message]
+                    });
+                    result.failedCount++;
+                }
+            }
+        return result;
+            
+    }
+};
 
 export default BookService;

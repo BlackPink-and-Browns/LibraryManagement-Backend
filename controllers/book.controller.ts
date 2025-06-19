@@ -21,7 +21,7 @@ import { checkRole } from "../middlewares/authorization.middleware";
 import axios from "axios";
 import { genreService } from "../routes/genre.route";
 
-const upload = multer({ dest: "uploads/" }); // saves file to `uploads/` folder
+const upload = multer({ storage: multer.memoryStorage() }); // saves file to `uploads/` folder
 
 class BookController {
     constructor(private bookService: BookService, router: Router) {
@@ -29,7 +29,7 @@ class BookController {
         router.post(
             "/bulk",
             checkRole([EmployeeRole.ADMIN]),
-            upload.single("file"),
+            upload.single("bulk_upload"),
             this.createBookInBulk.bind(this)
         );
         router.get(
@@ -118,60 +118,21 @@ class BookController {
 
     async createBookInBulk(req: Request, res: Response, next: NextFunction) {
         try {
-            const file = req.file;
-
+            const file = await req.file;
             if (!file) {
                 throw new httpException(400, "CSV file is required");
             }
 
-            const filePath = file.path;
-            const originalName = file.originalname;
-
-            const fs = await import("fs/promises");
-            const csvContent = await fs.readFile(filePath, "utf-8");
-
-            const parsed = Papa.parse(csvContent, {
-                header: true,
-                skipEmptyLines: true,
-            });
-            const records = parsed.data as any[];
-            if (!records.length) {
-                throw new httpException(40, "CSV is empty or invalid");
+            const allowedMimeTypes = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel'
+            ];
+            if (!allowedMimeTypes.includes(req.file.mimetype)) {
+                throw new httpException(400, "Invalid file type. Please upload an Excel file (.xlsx or .xls)");
             }
 
-
-            records.forEach(async (bookRecord) => {
-                const createBookDto = plainToInstance(CreateBookDTO, bookRecord);
-                const errors = await validate(createBookDto);
-                if (errors.length > 0) {
-                    console.log(JSON.stringify(errors));
-                    throw new httpException(400, JSON.stringify(errors));
-                }
-
-                const genres: Genre[] = await Promise.all(
-                    createBookDto.genres.map((genre_id) =>
-                        genreService.getGenreById(genre_id)
-                    )
-                );
-                const authors: Author[] = await Promise.all(
-                    createBookDto.authors.map((author_id) =>
-                        authorService.getAuthorByID(author_id)
-                    )
-                );
-                const book = new Book()
-
-                const b: Book = await this.bookService.createBook(
-                    createBookDto.title,
-                    createBookDto.isbn,
-                    createBookDto.description,
-                    createBookDto.cover_image,
-                    authors,
-                    genres,
-                    req.user?.id
-                );
-            });
-
-            return res.status(200).send();
+            const result = await this.bookService.bulkUploadBooks(req.file.buffer);
+            return res.status(200).send(result);
         } catch (error) {
             console.log(error);
             next(error);

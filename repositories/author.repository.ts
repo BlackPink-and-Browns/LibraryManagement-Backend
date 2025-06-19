@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { Author } from "../entities/author.entity";
 import { Review } from "../entities/review.entity";
 import { BookCopy } from "../entities/bookcopy.entity";
@@ -52,6 +52,19 @@ class AuthorRepository {
     });
   }
 
+  async findManyByName(names: string[]) {
+    return this.repository.find({
+        where: {
+          name: In(names)
+        },
+        select: {
+          id: true,
+          name: true
+        }
+        
+    })
+  }
+ 
   async update(id: number, author: Author): Promise<void> {
     await this.repository.save({ id, ...author });
   }
