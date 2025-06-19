@@ -21,17 +21,23 @@ const upload = multer({ storage: multer.memoryStorage() });
 class BookController {
     constructor(private bookService: BookService, router: Router) {
         router.get("/", this.getAllBooks.bind(this));
+        router.get(
+            "/bulk",
+            checkRole([EmployeeRole.ADMIN]),
+            this.createBookBulkTemplate.bind(this)
+        )
         router.post(
             "/bulk",
             checkRole([EmployeeRole.ADMIN]),
             upload.single("bulk_upload"),
             this.createBookInBulk.bind(this)
         );
-        router.get(
-            "/bulk",
+        router.post(
+            "/bulk/errors",
             checkRole([EmployeeRole.ADMIN]),
-            this.createBookBulkTemplate.bind(this)
+            this.createBookBulkErrorSheet.bind(this)
         )
+        
         router.get("/isbn/:isbn", this.getBookByISBN.bind(this));
         router.get("/:id", this.getBookByID.bind(this));
         router.post(
@@ -117,6 +123,18 @@ class BookController {
             const result = await this.bookService.bulkUploadBooks(req.file.buffer);
             return res.status(200).send(result);
         } catch (error) {
+            console.log(error);
+            next(error);
+        }
+    }
+
+    async createBookBulkErrorSheet(req: Request, res: Response, next: NextFunction){
+        try {
+            const fileBuffer = await this.bookService.generateErrorSheet(req.body.errors);
+            res.setHeader("Content-Disposition", "attachment; filename=book_bulk_upload_errors.xlsx");
+            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            res.send(fileBuffer);
+        } catch(error) {
             console.log(error);
             next(error);
         }

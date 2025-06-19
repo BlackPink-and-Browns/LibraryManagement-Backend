@@ -23,12 +23,7 @@ interface BookUploadResult {
   totalRows: number;
   successCount: number;
   failedCount: number;
-  errors: Array<{
-    row: number;
-    isbn?: string;
-    title?: string;
-    errors: string[];
-  }>;
+  errors: BulkError[];
 }
 
 interface ParsedBookData {
@@ -39,6 +34,11 @@ interface ParsedBookData {
   cover_image: string;
   authors: string[];
   genres: string[];
+}
+
+interface BulkError {
+    row: number;
+    errors: string[];
 }
 
 class BookService {
@@ -292,7 +292,7 @@ class BookService {
           !genres
         ) {
           throw new Error(
-            `Row ${rowNum}: ISBN, Title, Description, Cover Image, Author(s) and Genre(s) are required`
+            `ISBN, Title, Description, Cover Image, Author(s) and Genre(s) are required`
           );
         }
         const parsedAuthors = parseItems(authors, `Row ${rowNum}: Authors`);
@@ -371,6 +371,29 @@ class BookService {
     }
     return result;
   }
+
+  async generateErrorSheet(errors: BulkError[]) {
+    const workbook = new Workbook();
+
+    const workSheet = setupWorksheet(workbook, {
+      name: "Validation Errors",
+      headers: ["Row Number", "Error Messages"],
+      columnWidths: [10, 100],
+    });
+
+    errors.sort((a, b) => a.row - b.row);
+
+    for (const error of errors) {
+        workSheet.addRow([
+        error.row,
+        error.errors.join("\n"),
+        ]);
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+    }
+
 }
 
 export default BookService;
