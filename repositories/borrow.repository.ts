@@ -146,6 +146,7 @@ class BorrowRecordRepository {
         bookCopy: {
           book: true,
         },
+        borrowedBy: true
       },
       select: {
         id: true,
@@ -157,6 +158,9 @@ class BorrowRecordRepository {
             title: true,
           },
         },
+        borrowedBy: {
+          id: true
+        }
       },
     });
   }

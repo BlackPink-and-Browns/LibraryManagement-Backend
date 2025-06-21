@@ -16,8 +16,6 @@ class WaitlistController {
   }
 
   async createWaitlist(req: Request, res: Response, next: NextFunction) {
-    console.log(req.params)
-    console.log(req.user)
     try {
       const author = await this.waitlistService.createWaitlist(
         Number(req.params.book_id),

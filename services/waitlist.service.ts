@@ -23,7 +23,6 @@ class WaitlistService {
 
     async createWaitlist(book_id: number, user_id: number): Promise<Waitlist> {
         const book = await this.bookRepository.findPreviewByID(book_id);
-        this.logger.debug(book)
         if (!book) {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
@@ -35,15 +34,12 @@ class WaitlistService {
             user_id,
             book
         );
-        this.logger.debug(existingWaitlist)
         const borrowRecords = await borrowRepository.findBorrowRecordsByBookId(
             book.id
         );
-        this.logger.debug(borrowRecords)
         const usersWithBook: number[] = borrowRecords.map((borrowRecord) => {
             return borrowRecord.borrowedBy.id;
         });
-        this.logger.debug(usersWithBook)
         if (existingWaitlist) {
             if (existingWaitlist.status === WaitlistStatus.REQUESTED) {
                 throw new httpException(400, "Book has already been requested by user")
@@ -66,7 +62,6 @@ class WaitlistService {
             newWaitListEntry.employeeId = user_id;
             newWaitListEntry.status = WaitlistStatus.REQUESTED;
 
-            this.logger.debug(newWaitListEntry)
             const message = `A user has requested for the book - ${book.title}`;
             await notificationService.createMultpleRequestNotifications(
                 usersWithBook,
@@ -78,7 +73,6 @@ class WaitlistService {
             return await this.entityManager.transaction(async (manager) => {
                 const m = manager.getRepository(Waitlist);
                 const createdWaitListEntry = m.save(newWaitListEntry);
-                this.logger.debug(createdWaitListEntry)
                 const error = await auditLogService.createAuditLog(
                     AuditLogType.CREATE,
                     user_id,
@@ -86,7 +80,6 @@ class WaitlistService {
                     EntityType.WAITLIST,
                     manager
                 );
-                this.logger.debug(error)
                 if (error.error) {
                     const throwError = error.error
                     throw throwError;
