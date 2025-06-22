@@ -26,11 +26,12 @@ const port = process.env.PORT || 3000;
 const server = express();
 const logger = LoggerService.getInstance("app()");
 
-
 server.use(express.json());
+server.use(cors())
+
 server.use(loggerMiddleware);
 server.use(processTimeMiddleware);
-server.use(cors())
+
 server.use("/employees",authMiddleware, employeeRouter);
 server.use("/departments",authMiddleware,departmentRouter);
 server.use("/books",authMiddleware,bookRouter,bookCopyRouter)
@@ -44,8 +45,8 @@ server.use("/borrows",authMiddleware,borrowRouter);
 server.use("/notifications", authMiddleware, notificationRouter);
 server.use("/genres",authMiddleware,genreRouter);
 server.use("/analytics",authMiddleware,analyticsRouter);
-server.use(errorMiddleware);
 
+server.use(errorMiddleware);
 
 
 server.get("/", (req, res) => {
@@ -67,5 +68,4 @@ const init = async () => {
         process.exit(1);
     }
 };
-
 init();
