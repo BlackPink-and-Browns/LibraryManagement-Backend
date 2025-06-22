@@ -66,6 +66,6 @@ export class Book extends AbstractEntity {
   @Column({ default:false })
   is_available: boolean
 
-  @Column({ default:0})
+  @Column({ type: 'float', default:0})
   avg_rating: number
 }
