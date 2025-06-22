@@ -61,8 +61,9 @@ const init = async () => {
         server.listen(port, () => {
             logger.info("server listening to " + port);
         });
-    } catch {
+    } catch(error) {
         logger.error("Failed to connect");
+        console.log(error)
         process.exit(1);
     }
 };
