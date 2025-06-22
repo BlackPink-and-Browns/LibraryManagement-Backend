@@ -177,6 +177,7 @@ class BorrowRecordRepository {
       select: {
         id: true,
         borrowed_at: true,
+        expires_at: true,
         returned_at: true,
         status: true,
         bookCopy: {
@@ -186,7 +187,15 @@ class BorrowRecordRepository {
             id: true,
             title: true,
             cover_image: true,
+            authors: {
+              id: true,
+              name: true
+            }
           },
+          shelf: {
+            id: true,
+            label: true
+          }
         },
         borrowedBy: {
           id: true,
@@ -196,7 +205,10 @@ class BorrowRecordRepository {
       },
       relations: {
         bookCopy: {
-          book: true,
+          book: {
+            authors: true
+          },
+          shelf: true,
         },
         borrowedBy: true,
       },
