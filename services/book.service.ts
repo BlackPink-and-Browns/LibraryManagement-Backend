@@ -152,6 +152,10 @@ class BookService {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
         }
+        if (book.copies.length !== 0) {
+          this.logger.error("book has copies, cannot be deleted");
+          throw new httpException(400, "Book has copies. Cannot be deleted");
+        }
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(Book);
             await m.delete({ id });

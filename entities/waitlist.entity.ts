@@ -18,7 +18,7 @@ export class Waitlist extends AbstractEntity {
   @Column()
   employeeId: number;
 
-  @Column()
+  @Column({default: true})
   notification:boolean;
 
   @Column({
