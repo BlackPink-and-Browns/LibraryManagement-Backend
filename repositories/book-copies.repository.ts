@@ -22,6 +22,7 @@ class BookCopyRepository {
 
     async findAll(): Promise<BookCopy[]> {
         return this.repository.find({
+            where: {is_deleted : false},
             select: {
                 id: true,
                 is_available: true,
@@ -50,7 +51,7 @@ class BookCopyRepository {
     }
     async findOneByID(id: number): Promise<BookCopy> {
         return this.repository.findOne({
-            where: { id },
+            where: { id:id,is_deleted:false },
             select: {
                 id: true,
                 is_available: true,
@@ -80,7 +81,7 @@ class BookCopyRepository {
 
     async findCopiesByBookID(id: number): Promise<BookCopy[]> {
         return this.repository.find({
-            where: { ...{book: {id:Number(id)}}},
+            where: { ...{book: {id:Number(id)}}, is_deleted:false},
             select: {
                 id: true,
                 is_available: true,

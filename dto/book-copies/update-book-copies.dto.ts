@@ -15,4 +15,5 @@ export class UpdateBookCopyDTO {
 
     @IsOptional()
     is_available: boolean
+
 }

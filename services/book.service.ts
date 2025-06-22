@@ -173,15 +173,14 @@ class BookService {
         });
     }
 
-    async getAllBooks(): Promise<Book[]> {
+    async getAllBooks(is_deleted?: boolean): Promise<Book[]> {
         this.logger.info("Book Array Returned");
-        const books = await this.bookRepository.findMany();
-
+        const books = await this.bookRepository.findMany(is_deleted);
         return books;
     }
 
-    async getBookById(id: number): Promise<Book> {
-        const book = await this.bookRepository.findOneByID(id);
+    async getBookById(id: number, is_deleted?: boolean): Promise<Book> {
+        const book = await this.bookRepository.findOneByID(id,is_deleted);
         if (!book) {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
@@ -196,8 +195,8 @@ class BookService {
         return this.bookRepository.findOneByID(id);
     }
 
-    async getBookByISBN(isbn: string): Promise<Book> {
-        const book = await this.bookRepository.findOnebyISBN(isbn);
+    async getBookByISBN(isbn: string, is_deleted?: boolean): Promise<Book> {
+        const book = await this.bookRepository.findOnebyISBN(isbn, is_deleted);
         if (!book) {
             this.logger.error("book not found");
             throw new httpException(400, "Book not found");
