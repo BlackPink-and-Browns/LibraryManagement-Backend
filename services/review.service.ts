@@ -172,7 +172,6 @@ class ReviewService {
         }
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(Review);
-            await m.remove(review);
             this.logger.info(`Review ${id} deleted`);
             const error = await auditLogService.createAuditLog(
                 AuditLogType.DELETE,
@@ -181,6 +180,7 @@ class ReviewService {
                 EntityType.REVIEW,
                 manager
             );
+            await m.remove(review);
             if (error.error) {
                 throw error.error;
             }
