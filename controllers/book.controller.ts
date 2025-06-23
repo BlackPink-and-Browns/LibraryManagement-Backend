@@ -12,14 +12,13 @@ import { EmployeeRole } from "../entities/enums";
 import { checkRole } from "../middlewares/authorization.middleware";
 import { BulkUploadErrorDto } from "../dto/bulkupload/create-bulkupload.dto";
 
-
 const upload = multer({ storage: multer.memoryStorage() });
 
 class BookController {
     constructor(private bookService: BookService, router: Router) {
         router.get("/", this.getAllBooks.bind(this));
         router.get("/popular", this.getTrendingBooks.bind(this));
-		router.get("/recommended",this.getRecommendedBooks.bind(this))
+        router.get("/recommended", this.getRecommendedBooks.bind(this));
         router.get(
             "/bulk",
             checkRole([EmployeeRole.ADMIN]),
@@ -38,7 +37,11 @@ class BookController {
         );
 
         router.get("/isbn/:isbn", this.getBookByISBN.bind(this));
-        router.get("/:id", this.getBookByID.bind(this));
+        router.get(
+            "/:id",
+            checkRole([EmployeeRole.ADMIN]),
+            this.getBookByID.bind(this)
+        );
         router.post(
             "/",
             checkRole([EmployeeRole.ADMIN]),
@@ -121,28 +124,36 @@ class BookController {
                 );
             }
 
-      const result = await this.bookService.bulkUploadBooks(req.file.buffer, req.user?.id);
-      return res.status(200).send(result);
-    } catch (error) {
-      console.log(error);
-      next(error);
+            const result = await this.bookService.bulkUploadBooks(
+                req.file.buffer,
+                req.user?.id
+            );
+            return res.status(200).send(result);
+        } catch (error) {
+            console.log(error);
+            next(error);
+        }
     }
-  }
-  async createBookBulkErrorSheet(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const { errors } = req.body;
+    async createBookBulkErrorSheet(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        try {
+            const { errors } = req.body;
 
-      const errorRequestDto = plainToInstance(BulkUploadErrorDto, req.body);
-      const requestErrors = await validate(errorRequestDto);
-      if (requestErrors.length > 0) {
-        throw new httpException(400, JSON.stringify(requestErrors));
-      }
+            const errorRequestDto = plainToInstance(
+                BulkUploadErrorDto,
+                req.body
+            );
+            const requestErrors = await validate(errorRequestDto);
+            if (requestErrors.length > 0) {
+                throw new httpException(400, JSON.stringify(requestErrors));
+            }
 
-      const fileBuffer = await this.bookService.generateErrorSheet(errorRequestDto.errors);
+            const fileBuffer = await this.bookService.generateErrorSheet(
+                errorRequestDto.errors
+            );
 
             res.setHeader(
                 "Content-Disposition",
@@ -193,7 +204,12 @@ class BookController {
 
     async getAllBooks(req: Request, res: Response, next: NextFunction) {
         try {
-            const books = await this.bookService.getAllBooks();
+            let books: Book[] = undefined;
+            if (req.user?.role === EmployeeRole.ADMIN) {
+                books = await this.bookService.getAllBooks();
+            } else {
+                books = await this.bookService.getAllBooks(false);
+            }
             res.status(200).json(books);
         } catch (error) {
             next(error); // Pass error to the global error handler
@@ -202,9 +218,18 @@ class BookController {
 
     async getBookByID(req: Request, res: Response, next: NextFunction) {
         try {
-            const book = await this.bookService.getBookById(
-                Number(req.params.id)
-            );
+            let book: Book = undefined;
+            if (req.user?.role == EmployeeRole.ADMIN) {
+                book = await this.bookService.getBookById(
+                    Number(req.params.id),
+                );
+            } else {
+                book = await this.bookService.getBookById(
+                    Number(req.params.id),
+                    false
+                );
+            }
+
             if (!book) {
                 throw new httpException(404, "book not found");
             }
@@ -217,7 +242,14 @@ class BookController {
 
     async getBookByISBN(req: Request, res: Response, next: NextFunction) {
         try {
-            const book = await this.bookService.getBookByISBN(req.params.isbn);
+            let book: Book = undefined;
+            if (req.user?.role == EmployeeRole.ADMIN) {
+                book = await this.bookService.getBookByISBN(
+                    req.params.isbn,
+                );
+            } else {
+                book = await this.bookService.getBookByISBN(req.params.isbn, false);
+            }
             if (!book) {
                 throw new httpException(404, "book not found");
             }
@@ -238,15 +270,17 @@ class BookController {
         }
     }
 
-	async getRecommendedBooks(req: Request, res: Response, next: NextFunction) {
-		try{
-			const books = await this.bookService.getRecommendedBooks(Number(req.user?.id))
-			res.status(200).json(books)
-		}catch(error){
-			console.log(error);
+    async getRecommendedBooks(req: Request, res: Response, next: NextFunction) {
+        try {
+            const books = await this.bookService.getRecommendedBooks(
+                Number(req.user?.id)
+            );
+            res.status(200).json(books);
+        } catch (error) {
+            console.log(error);
             next(error);
-		}
-	}
+        }
+    }
 }
 
 export default BookController;

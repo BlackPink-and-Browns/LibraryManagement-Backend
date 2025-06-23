@@ -17,8 +17,9 @@ class BookRepository {
         await this.repository.delete({id})
     }
 
-    async findMany(): Promise<Book[]> {
+    async findMany(is_deleted?: boolean): Promise<Book[]> {
         return this.repository.find({
+            where: { copies: {is_deleted:is_deleted}},
             select: {
                 id: true,
                 isbn: true,
@@ -41,7 +42,8 @@ class BookRepository {
                         label: true,
                         office: true,
                     },
-                    is_available: true
+                    is_available: true,
+                    is_deleted:true
                 },
                 reviews: {
                     id: true,
@@ -61,9 +63,9 @@ class BookRepository {
             },
         });
     }
-    async findOneByID(id:number): Promise<Book> {
+    async findOneByID(id:number, is_deleted?:boolean): Promise<Book> {
         return this.repository.findOne({
-            where: {id},
+            where: {id, copies:{is_deleted:is_deleted}},
             select: {
                 id: true,
                 isbn: true,
@@ -83,7 +85,8 @@ class BookRepository {
                 copies: {
                     id: true,
                     shelf:true,
-                    is_available:true
+                    is_available:true,
+                    is_deleted:true
                 },
                 reviews: {
                     id: true,
@@ -108,9 +111,9 @@ class BookRepository {
         });
     }
 
-    async findOnebyISBN(isbn:string): Promise<Book>{
+    async findOnebyISBN(isbn:string, is_deleted? : boolean): Promise<Book>{
         return this.repository.findOne({
-            where: {isbn:isbn},
+            where: {isbn:isbn, copies: {is_deleted:is_deleted}},
             select: {
                 id: true,
                 isbn: true,
@@ -133,7 +136,8 @@ class BookRepository {
                         label: true,
                         office: true,
                     },
-                    is_available:true
+                    is_available:true,
+                    is_deleted:true
                 },
                 reviews: {
                     id: true,

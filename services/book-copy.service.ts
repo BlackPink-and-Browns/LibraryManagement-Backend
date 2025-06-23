@@ -100,7 +100,8 @@ class BookCopyService {
         }
         return await this.entityManager.transaction(async (manager) => {
             const m = manager.getRepository(BookCopy);
-            await m.delete({ id: copy_id });
+            bookCopy.is_deleted = true
+            await m.save({copy_id, ...bookCopy});
             this.logger.info("Book Copy Deleted");
             const error = await auditLogService.createAuditLog(
                 AuditLogType.DELETE,

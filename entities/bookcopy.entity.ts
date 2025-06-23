@@ -19,4 +19,7 @@ export class BookCopy extends AbstractEntity {
 
   @OneToMany(() => BorrowRecord, record => record.bookCopy)
   borrowRecords: BorrowRecord[];
+
+  @Column({default: false})
+  is_deleted: boolean
 }
