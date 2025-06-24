@@ -39,7 +39,6 @@ class BookController {
         router.get("/isbn/:isbn", this.getBookByISBN.bind(this));
         router.get(
             "/:id",
-            checkRole([EmployeeRole.ADMIN]),
             this.getBookByID.bind(this)
         );
         router.post(
