@@ -276,6 +276,7 @@ class BorrowRecordRepository {
     return this.repository.find({
       where: {
         borrowedBy: { id: employeeId },
+        bookCopy: {is_deleted: false}
       },
        select: {
         id: true,
