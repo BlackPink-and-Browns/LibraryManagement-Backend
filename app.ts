@@ -20,36 +20,83 @@ import borrowRouter from "./routes/borrow.route";
 import notificationRouter from "./routes/notification.route";
 import genreRouter from "./routes/genre.route";
 import analyticsRouter from "./routes/analytics.route";
+import http from 'http'
+import { Server, Socket } from "socket.io";
+import  jwt  from "jsonwebtoken";
+
+interface CustomSocket extends Socket {
+  userId?: number;
+}
 
 const port = process.env.PORT || 3000;
 
-const server = express();
+const app = express();
 const logger = LoggerService.getInstance("app()");
-
-server.use(express.json());
-server.use(cors())
-
-server.use(loggerMiddleware);
-server.use(processTimeMiddleware);
-
-server.use("/employees",authMiddleware, employeeRouter);
-server.use("/departments",authMiddleware,departmentRouter);
-server.use("/books",authMiddleware,bookRouter,bookCopyRouter)
-server.use("/reviews",authMiddleware,reviewRouter);
-server.use("/shelves",authMiddleware,shelfRouter)
-server.use("/audits",authMiddleware,auditLogRouter)
-server.use("/auth", authRouter);
-server.use("/authors", authMiddleware, authorRouter);
-server.use("/requests/books", authMiddleware, waitlistRouter);
-server.use("/borrows",authMiddleware,borrowRouter);
-server.use("/notifications", authMiddleware, notificationRouter);
-server.use("/genres",authMiddleware,genreRouter);
-server.use("/analytics",authMiddleware,analyticsRouter);
-
-server.use(errorMiddleware);
+const server = http.createServer(app);
 
 
-server.get("/", (req, res) => {
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  }
+});
+
+io.use((socket: CustomSocket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication error'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET ) as any;
+    socket.userId = decoded.id;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error'));
+  }
+});
+
+io.on('connection', (socket: any) => {
+  console.log(`User ${socket.userId} connected with socket ${socket.id}`);
+  
+  socket.join(`user-${socket.userId}`);
+
+  socket.emit('room-joined', {
+    room: `user-${socket.userId}`,
+    userId: socket.userId
+  });
+  
+  socket.on('disconnect', () => {
+    console.log(`User ${socket.userId} with socket ${socket.id} disconnected`);
+  });
+});
+
+export {io};
+
+app.use(express.json());
+app.use(cors())
+
+app.use(loggerMiddleware);
+app.use(processTimeMiddleware);
+
+app.use("/employees",authMiddleware, employeeRouter);
+app.use("/departments",authMiddleware,departmentRouter);
+app.use("/books",authMiddleware,bookRouter,bookCopyRouter)
+app.use("/reviews",authMiddleware,reviewRouter);
+app.use("/shelves",authMiddleware,shelfRouter)
+app.use("/audits",authMiddleware,auditLogRouter)
+app.use("/auth", authRouter);
+app.use("/authors", authMiddleware, authorRouter);
+app.use("/requests/books", authMiddleware, waitlistRouter);
+app.use("/borrows",authMiddleware,borrowRouter);
+app.use("/notifications", authMiddleware, notificationRouter);
+app.use("/genres",authMiddleware,genreRouter);
+app.use("/analytics",authMiddleware,analyticsRouter);
+
+app.use(errorMiddleware);
+
+
+app.get("/", (req, res) => {
     res.status(200).send("hi");
 });
 
@@ -60,7 +107,7 @@ const init = async () => {
         logger.info("connected to database training");
 
         server.listen(port, () => {
-            logger.info("server listening to " + port);
+            logger.info("app listening to " + port);
         });
     } catch(error) {
         logger.error("Failed to connect");

@@ -37,6 +37,7 @@
     "papaparse": "^5.5.3",
     "pg": "^8.16.0",
     "reflect-metadata": "^0.2.2",
+    "socket.io": "^4.8.1",
     "typeorm": "^0.3.24",
     "typeorm-naming-strategies": "^4.1.0",
     "winston": "^3.17.0"

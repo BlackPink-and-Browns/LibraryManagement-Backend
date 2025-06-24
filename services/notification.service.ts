@@ -6,6 +6,7 @@ import { CreateNotificationDTO } from "../dto/notification/create-notification.d
 import { EntityManager } from "typeorm";
 import { error } from "winston";
 import { auditLogService } from "../routes/audit.route";
+import { io } from "../app";
 
 class NotificationService {
     private logger = LoggerService.getInstance(NotificationService.name);
@@ -49,8 +50,17 @@ class NotificationService {
             notifications.push(notification)
         });
             
+        const savedNotifications = await this.notificationRepository.createMany(notifications);
 
-        await this.notificationRepository.createMany(notifications);
+        savedNotifications.forEach(savedNotification => {
+        io.to(`user-${savedNotification.employeeId}`).emit('new-notification', {
+          id: savedNotification.id,
+          message: savedNotification.message,
+          type: savedNotification.type,
+          createdAt: savedNotification.createdAt
+        });
+        this.logger.info(`Notification emitted for user ${savedNotification.employeeId}`);
+      });
     }
 
 
@@ -61,12 +71,21 @@ class NotificationService {
         newNotification.employeeId = createNotificationDTO.employeeId;
         newNotification.message = createNotificationDTO.message;
         const notificationManagerRepository = manager.getRepository(Notification)
-        const createdNotification = await notificationManagerRepository.save(newNotification)
+        const savedNotification = await notificationManagerRepository.save(newNotification)
+
+        io.to(`user-${createNotificationDTO.employeeId}`).emit('new-notification', {
+            id: savedNotification.id,
+            message: savedNotification.message,
+            type: savedNotification.type,
+            createdAt: savedNotification.createdAt
+        });
+        
+        this.logger.info(`Single notification emitted for user ${createNotificationDTO.employeeId}`);
         
         const createdAudit = await auditLogService.createAuditLog(
             AuditLogType.CREATE,
             createNotificationDTO.employeeId,
-            (await createdNotification).id.toString(),
+            (await savedNotification).id.toString(),
             EntityType.WAITLIST,
             manager
         );
